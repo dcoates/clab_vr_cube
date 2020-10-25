@@ -62,6 +62,7 @@
 
             function clear_status() {
 			set_html('lblMessage','OK');
+            big_im="";
 		};
 
             var params = {
@@ -251,7 +252,13 @@
 
         var recd;
         var sender_id;
+        var the_mess;
+        var big_im="";
+
         function receive_message(s) {
+
+            the_mess=s;
+            console.log("GOT ONE");
 
 	// This was for the Dark Adaptation objects (staircases). We (summation) should just have a string
             if (typeof(s)=="object") { // upload
@@ -272,6 +279,22 @@
 
             if (fields.length>2) {
                 	var groupid=fields[0];
+
+                    if (groupid[0]=='i') {
+                       big_im+=fields[2]; 
+                       var contents=fields[1].split('/');
+                       if (parseInt(contents[0])+1==parseInt(contents[1])) {
+
+                           // Create new window and add this one to it
+                           var w = window.open('', '');
+                           w.document.title = groupid;
+                           var img = new Image();
+                           img.src = big_im;
+                           w.document.body.appendChild(img);
+
+                           big_im=""; // clear for next one
+                       }
+                    } else {
                 	var col=fields[1].toUpperCase();
                     var colnum=col.charCodeAt(0)-65;
                 	var row=parseInt(col.substr(1))-1;
@@ -288,10 +311,11 @@
 						} else {
 							hot.populateFromArray(row,colnum,[[dat]]);
 						}
-} else {
-                	hot.populateFromArray(row,colnum,[[dat]]);
-}
-		}
+                    } else {
+                	    hot.populateFromArray(row,colnum,[[dat]]);
+                    }
+		        }// is an img or result msg
+                } 
             }
         }
 

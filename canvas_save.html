@@ -48,12 +48,33 @@
 			var scale_base=1.0;
 			//var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
 
+
+            function send_chunks(long_str,imnum) {
+                var idx_byte=0;
+                var idx_chunk=0;
+                const MY_MAX=65536-256;
+                var num_chunks=Math.ceil(long_str.length/MY_MAX);
+                for (idx_chunk=0; idx_chunk<num_chunks; idx_chunk++) {
+                    var subbie=long_str.substr(idx_byte,MY_MAX);
+                    thePeer.send(imnum+" "+idx_chunk+"/"+num_chunks+" "+subbie);
+                    idx_byte+=MY_MAX;
+                }
+            }
+
+          function sleep(milliseconds) {
+              const date = Date.now();
+              let currentDate = null;
+              do {
+                currentDate = Date.now();
+              } while (currentDate - date < milliseconds);
+            }
             
             // Currently, this cycles through z positions for one randomly chosen "target" cube
 			function dokey(e) {
 			    
 			    var which_one=parseInt(Math.random()*3);
 			    
+                if (false) { // For now, only send the camera image
 				thePeer.send('X A'+trial_num+ " "+e.keyCode);
 				thePeer.send('X B'+trial_num+ " "+which_one);
 				thePeer.send('X C'+trial_num+ " "+room.children[0].position.z);
@@ -62,10 +83,21 @@
 				thePeer.send('X F'+trial_num+ " "+room.children[0].scale.x);
 				thePeer.send('X G'+trial_num+ " "+room.children[1].scale.x);
 				thePeer.send('X H'+trial_num+ " "+room.children[2].scale.x);
+                }
 
-                document.r2.render(document.scene,document.rend.xr.cameras[0]) // Left camera
-                var imData0=r2.domElement.toDataURL()
-				thePeer.send(imData0);
+                if (e.keyCode==48) { // "0"
+                    document.r2.render(document.scene,document.rend.xr.cameras[0]) // Left camera
+                    var imData0=document.r2.domElement.toDataURL()
+				    send_chunks(imData0,'i0');
+                    document.imData0=imData0; // DEBUG
+                }
+
+                if (e.keyCode==49) { // "1"
+                    document.r2.render(document.scene,document.rend.xr.cameras[1]) // Right camera
+                    var imData1=document.r2.domElement.toDataURL()
+				    send_chunks(imData1,'i1');
+                    document.imData1=imData1; // DEBUG
+                }
 				
                 // each time a key is pressed, choose a new zpos_target
                 var zpos_target=disparityList[Math.floor(Math.random()*disparityList.length) ]+zpos_base;
@@ -103,7 +135,7 @@
 
                 var handler_uploader={
                     id: function(s) {
-                            setTimeout( function() {thePeer.join('a10001');},    500 );
+                            setTimeout( function() {thePeer.join('ff0001');},    500 );
                     },
                     lost: function(s) {log.info(s);},
                     error: function(s) {log.info(s);},
