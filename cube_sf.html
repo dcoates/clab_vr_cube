@@ -107,8 +107,8 @@
             gui.add(params,'intensity',0,1.0).onFinishChange(do_update);
             gui.add(params,'contrast',0,1.0).onFinishChange(do_update);
             gui.add(params,'size',0,2.0).onFinishChange(do_update);
-            gui.add(params,'lowPassRadius',1,dim); // don't update: inf loop
-            gui.add(params,'highPassRadius',2,dim); // don't update: inf loop
+            //gui.add(params,'lowPassRadius',1,dim); // don't update: inf loop
+            //gui.add(params,'highPassRadius',2,dim); // don't update: inf loop
             gui.add(params,'center_pix',2,20).onFinishChange(do_update);
             gui.add(params,'bw_pix',0,3).onFinishChange(do_update);
             gui.add(params,'rotX',0,0.5).onFinishChange(do_update);
