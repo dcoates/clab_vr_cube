@@ -21,10 +21,12 @@
 
 		import { BoxLineGeometry } from '../three.js/examples/jsm/geometries/BoxLineGeometry.js';
 		import { VRButton } from '../three.js/examples/jsm/webxr/VRButton.js';
-		//import {WebGLRenderer } from './WebGLRenderer.js'; // Our hacked version (to hard-code position)
+		import { XRControllerModelFactory } from '../three.js/examples/jsm/webxr/XRControllerModelFactory.js';
+		import {WebGLRenderer } from '../three.js/src/renderers/WebGLRenderer.js';
+		//import {WebXRManager } from './WebXRManager.js'; // Our hacked version (to hard-code position)
 
 		// Global variables: only list variables here, no code 
-		var clock = new THREE.Clock();
+		//var clock = new THREE.Clock();
 		var thePeer; // For our PC communication
             
 		// Control of trial sequence
@@ -38,6 +40,26 @@
 		var zpos_base=-2;
 		//var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
 		var which_is_target=-1; //which one was the target on the "current" trial
+        
+        function send_chunks(long_str,imnum) {
+            var idx_byte=0;
+            var idx_chunk=0;
+            const MY_MAX=65536-256;
+            var num_chunks=Math.ceil(long_str.length/MY_MAX);
+            for (idx_chunk=0; idx_chunk<num_chunks; idx_chunk++) {
+                var subbie=long_str.substr(idx_byte,MY_MAX);
+                thePeer.send(imnum+" "+idx_chunk+"/"+num_chunks+" "+subbie);
+                idx_byte+=MY_MAX;
+            }
+        }
+
+        function sleep(milliseconds) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+                currentDate = Date.now();
+            } while (currentDate - date < milliseconds);
+        }
             
 		// This function is called each time a key is hit
 		function handle_key(e) {
@@ -53,12 +75,27 @@
 				thePeer.send('X G'+trial_num+ " "+room.children[1].scale.x);
 				thePeer.send('X H'+trial_num+ " "+room.children[2].scale.x);
 
+
 				// Choose the next target
 				which_is_target=parseInt(Math.random()*3);
 	            
 				// Get the zpos for the next target from the trial sequence
 				var zpos_target=zpos_base+disparityTrials[trial_num];
                 
+                if (e.keyCode==56) { // L key
+                    document.r2.render(document.scene,document.rend.xr.cameras[0]) // Left camera
+                    var imData0=document.r2.domElement.toDataURL()
+				    send_chunks(imData0,'i0');
+                    document.imData0=imData0; 
+                }
+
+                if (e.keyCode==57) { // R key
+                    document.r2.render(document.scene,document.rend.xr.cameras[1]) // Right camera
+                    var imData1=document.r2.domElement.toDataURL()
+				    send_chunks(imData1,'i1');
+                    document.imData1=imData1; 
+                }
+                    
 				// Update all cubes
 				for ( var i = 0; i < room.children.length; i ++ ) {
 					var cube = room.children[ i ];
@@ -193,9 +230,22 @@
 				renderer.xr.enabled = true;
 				renderer.gammaFactor = 1;
 				container.appendChild( renderer.domElement );
+                
+                // Create a new WebGLRenderer (just for rendering of the two VR cameras to imgs)
+                // Try to be as close as possible to the original renderer
+				const renderer2 = new WebGLRenderer( { antialias: true } );
+				renderer2.setPixelRatio( window.devicePixelRatio );
+				renderer2.setSize( window.innerWidth, window.innerHeight );
+				renderer2.outputEncoding = THREE.sRGBEncoding;
+				container.appendChild( renderer2.domElement );
 
+                document.rend=renderer;
+                document.r2=renderer2;
+                document.scene=scene;
+                
 				document.body.appendChild( VRButton.createButton( renderer ) );
-
+                
+                
 				renderer.setAnimationLoop( render, camera);
 			}
 
