@@ -57,7 +57,7 @@
 				which_is_target=parseInt(Math.random()*3);
 	            
 				// Get the zpos for the next target from the trial sequence
-				zpos_target=disparityTrials[trial_num];
+				var zpos_target=zpos_base+disparityTrials[trial_num];
                 
 				// Update all cubes
 				for ( var i = 0; i < room.children.length; i ++ ) {
@@ -78,6 +78,12 @@
 				if (trial_num>MAX_TRIALS) {		// add one, since first one isn't a real trial
 				    room.children[0].scale.x=100;	// Make huge to tell observer it's over
 				};
+				
+				room.children[0].position.y=1.6; //Move the cubes back
+                room.children[1].position.y=1.6;
+                room.children[2].position.y=1.6;
+                
+                setTimeout(erasecubes,1000); // Stimulus duration 1sec: call the erase cube function after 1sec is passed
 		};
 
 			// For three.js:
@@ -122,7 +128,7 @@
 				document.body.appendChild( container );
 
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0x808080 );
+				scene.background = new THREE.Color( 0x808080 ); //0x000000, 0x202020, 0x404040, 0x606060, 0x808080, 0xA0A0A0, 0xC0C0C0, 0xE0E0E0, 0xFFFFFF
 
 				camera = new THREE.PerspectiveCamera( 120, window.innerWidth / window.innerHeight, 0.1, 100 );
 				
@@ -132,15 +138,15 @@
 				scene.add( camera );
 
 				room = new THREE.LineSegments(
-					new BoxLineGeometry( 10, 10, 10, 10, 10, 10).translate( 0, 2, 0 ), // first size, second density?
-					new THREE.LineBasicMaterial( { color: 0xFF0000 } )
+					new BoxLineGeometry( 10, 10, 10, 1, 1, 1).translate( 0, 2, 0 ), // first size, second density?
+					new THREE.LineBasicMaterial( { color: 0x000000 } )
 				);
 				
 				scene.add( room );
 
 				//scene.add( new THREE.HemisphereLight( ) );
 
-				var light = new THREE.AmbientLight( 0xffffff,3);
+				var light = new THREE.AmbientLight( 0xffffff,1);
 				light.position.set( 0, 0, 0 ).normalize();
 				scene.add( light );
 
@@ -149,7 +155,7 @@
 				// 3 Cubes
 				for ( var i = 0; i < 3; i ++ ) {
 					// RGB: 0x808080, half red , "HTML color"
-					var lavaTexture = THREE.ImageUtils.loadTexture( 'http://server.coateslab.org/three.js/examples/textures/lava/lavatile.jpg' );
+					var lavaTexture = THREE.ImageUtils.loadTexture( 'https://server.coateslab.org/clab_vr_cube/sf_textures/sf_texture10.00.png' );
 					var lavaMaterial = new THREE.MeshLambertMaterial( { map: lavaTexture } );
 					var object = new THREE.Mesh( geometry, lavaMaterial, (0.1,0.1,0.1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
@@ -160,7 +166,7 @@
 					console.log(object.position.y);
 					console.log(object.position.z);
 
-					object.rotation.x = 0; //Math.random() * 2 * Math.PI;
+					object.rotation.x = 0; //Math.random() * 2 * Math.PI ;
 					object.rotation.y = 0; //Math.random() * 2 * Math.PI;
 					object.rotation.z = 0; //Math.random() * 2 * Math.PI;
 
@@ -193,8 +199,15 @@
 				renderer.setAnimationLoop( render, camera);
 			}
 
+            function erasecubes(){
+                room.children[0].position.y=100; //Move the cubes far away/out of sight
+                room.children[1].position.y=100;
+                room.children[2].position.y=100;
+            }
+            
 			function render() {
 				renderer.render( scene, camera );
+				
 			}
 
 		</script>
