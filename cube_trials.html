@@ -22,6 +22,11 @@
 		import { BoxLineGeometry } from '../three.js/examples/jsm/geometries/BoxLineGeometry.js';
 		import { VRButton } from '../three.js/examples/jsm/webxr/VRButton.js';
 		//import {WebGLRenderer } from './WebGLRenderer.js'; // Our hacked version (to hard-code position)
+		import { EffectComposer } from '../three.js/examples/jsm/postprocessing/EffectComposer.js';
+		import { RenderPass } from '../three.js/examples/jsm/postprocessing/RenderPass.js';
+		//import { GlitchPass } from '../three.js/examples/jsm/postprocessing/GlitchPass.js';
+		import { ShaderPass } from '../three.js/examples/jsm/postprocessing/ShaderPass.js';
+		import { LumGammaShader } from './lum_gamma_shader.js';
 
 		// Global variables: only list variables here, no code 
 		var clock = new THREE.Clock();
@@ -108,6 +113,7 @@
 			var container;
 			var camera, scene, renderer;
 			var room;
+			var composer;
 
 			// For PC communication:
 			var handler_uploader={
@@ -221,6 +227,17 @@
 				renderer.gammaFactor = 1;
 				container.appendChild( renderer.domElement );
 
+				// Post-processing effects: New luminance filter
+				composer  = new EffectComposer( renderer );
+				const renderPass = new RenderPass( scene, camera );
+				composer.addPass( renderPass );
+				const luminosityPass = new ShaderPass( LumGammaShader );
+				composer.addPass( luminosityPass );
+
+				// Set the luminance (0-1.0) here:
+				// Gamma defaults to 2.4 (for Samsung S6)
+				luminosityPass.uniforms['opacity'].value=0.5;
+
 				document.body.appendChild( VRButton.createButton( renderer ) );
 
 				renderer.setAnimationLoop( render, camera);
@@ -235,7 +252,8 @@
             }
             
 			function render() {
-				renderer.render( scene, camera );
+				composer.render();
+				//renderer.render( scene, camera );
 				
 			}
 
