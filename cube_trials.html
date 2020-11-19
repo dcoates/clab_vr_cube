@@ -29,16 +29,21 @@
             
 		// Control of trial sequence
 		var trial_num=0; // Count up which trial we are on
-		const MAX_TRIALS=100;
-		var disparityList=[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5];
+		const MAX_TRIALS=60; //number in list X no of repeats
+		var disparityList=[0.05, 0.1, 0.15, 0.20, 0.25, 0.3];
 		var disparityTrials; // Populate this in init() with a long sequence of those disparities, randomized
 			
 		// Variables for each trial
 		var scale_base=1.0;
-		var zpos_base=-2;
+		var zpos_base=-4;
 		//var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
 		var which_is_target=-1; //which one was the target on the "current" trial
+        
             
+        var material = new THREE.MeshBasicMaterial({color: 0xff0000});
+        //var textGeo = new THREE.Mesh(text, material); 
+
+
 		// This function is called each time a key is hit
 		function handle_key(e) {
 			    
@@ -62,10 +67,12 @@
 				// Update all cubes
 				for ( var i = 0; i < room.children.length; i ++ ) {
 					var cube = room.children[ i ];
-					var jitter_size=Math.random()*0.5-0.1; // choose random between -0.05 and +0.05 // TODO: this is jitter between -0.1 and 0.4 : is ok?
+					var jitter_size=Math.random()*0.2-0.1; // choose random between -0.05 and +0.05 // TODO: this is jitter between -0.1 and 0.4 : is ok?
 
 					cube.scale.x=jitter_size+scale_base;
 					cube.scale.y=jitter_size+scale_base;
+					
+					cube.rotation.z=Math.floor(Math.random() * 10)*Math.PI/2; //Rotate the texture each time
 					
 					if (i==which_is_target) { 
 						cube.position.z = zpos_target;	// target: set to target zpos
@@ -75,15 +82,26 @@
 				};
 
 				trial_num += 1;
-				if (trial_num>MAX_TRIALS) {		// add one, since first one isn't a real trial
-				    room.children[0].scale.x=100;	// Make huge to tell observer it's over
+				if (trial_num>MAX_TRIALS+2) {		// add two, since first two are not real trials
+				    room.children[0].scale.x=0.01;	// Make the target to disappear at the end.
+                    room.children[1].scale.x=0.01;	
+                    room.children[2].scale.x=0.01;	
 				};
+				
+
 				
 				room.children[0].position.y=1.6; //Move the cubes back
                 room.children[1].position.y=1.6;
                 room.children[2].position.y=1.6;
                 
-                setTimeout(erasecubes,1000); // Stimulus duration 1sec: call the erase cube function after 1sec is passed
+                //setTimeout(erasecubes,1000); // Stimulus duration 1sec: call the erase cube function after 1sec is passed
+                
+                if (trial_num<2) {		
+				    setTimeout(erasecubes,10000)	
+				} else {
+				    setTimeout(erasecubes,1000)
+				};
+				
 		};
 
 			// For three.js:
@@ -113,8 +131,11 @@
 				
 				// Build disparity trial list: First copy the list so that it fills up an array
 				// of length MAX_TRIALS. Then shuffle it.
-				disparityTrials=Array.from({length:MAX_TRIALS+1}, (e,i) => disparityList[i%disparityList.length]) 
-				disparityTrials=shuffle(disparityTrials);
+				disparityTrials=Array.from({length:MAX_TRIALS}, (e,i) => disparityList[i%disparityList.length]) 
+				var shuffledisparityTrials=shuffle(disparityTrials);
+				var first=[0,0];
+				disparityTrials=first.concat(shuffledisparityTrials);
+				
 
 				// Set up our key handler
 				document.onkeydown = handle_key;
@@ -138,7 +159,7 @@
 				scene.add( camera );
 
 				room = new THREE.LineSegments(
-					new BoxLineGeometry( 10, 10, 10, 1, 1, 1).translate( 0, 2, 0 ), // first size, second density?
+					new BoxLineGeometry( 10,10,10, 50,50,50).translate( 0, 1.6, 0 ), // first size, second density?
 					new THREE.LineBasicMaterial( { color: 0x000000 } )
 				);
 				
@@ -149,17 +170,21 @@
 				var light = new THREE.AmbientLight( 0xffffff,1);
 				light.position.set( 0, 0, 0 ).normalize();
 				scene.add( light );
-
-				var geometry = new THREE.BoxBufferGeometry( 0.1, 0.1, 0.1);
+				
+            
+				var geometry = new THREE.BoxBufferGeometry( 0.2,0.2,0.2);
 
 				// 3 Cubes
 				for ( var i = 0; i < 3; i ++ ) {
 					// RGB: 0x808080, half red , "HTML color"
-					var lavaTexture = THREE.ImageUtils.loadTexture( 'https://server.coateslab.org/clab_vr_cube/sf_textures/sf_texture10.00.png' );
+					var lavaTexture = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
+					lavaTexture.wrapS = THREE.RepeatWrapping;
+                    lavaTexture.wrapT = THREE.RepeatWrapping;
+                    lavaTexture.repeat.set( 0.5,0.5 );
 					var lavaMaterial = new THREE.MeshLambertMaterial( { map: lavaTexture } );
-					var object = new THREE.Mesh( geometry, lavaMaterial, (0.1,0.1,0.1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
+					var object = new THREE.Mesh( geometry, lavaMaterial, (2,2,2)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
-					object.position.x = (i/3.0-0.33)/2; //Math.random() * 1 - 0.5;
+					object.position.x = (i/3.0-1/3); //Math.random() * 1 - 0.5;
 					object.position.y = 1.6; //Math.random() * 1;
 					object.position.z = 0; //Math.random() * 1 - 0.5;
 					console.log(object.position.x);
@@ -168,7 +193,7 @@
 
 					object.rotation.x = 0; //Math.random() * 2 * Math.PI ;
 					object.rotation.y = 0; //Math.random() * 2 * Math.PI;
-					object.rotation.z = 0; //Math.random() * 2 * Math.PI;
+					object.rotation.z = 0//Math.random() * Math.PI/2; //Math.random() * 2 * Math.PI;
 
 					// WE think this is the original size for each cube
 					object.scale.x = 1.0; //Math.random() + 0.5;
@@ -183,8 +208,10 @@
 					//object.userData.velocity.z = Math.random() * 0.01 - 0.005;
 
 					room.add( object );
+					
 
 				}
+			
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -199,6 +226,8 @@
 				renderer.setAnimationLoop( render, camera);
 			}
 
+
+				
             function erasecubes(){
                 room.children[0].position.y=100; //Move the cubes far away/out of sight
                 room.children[1].position.y=100;
