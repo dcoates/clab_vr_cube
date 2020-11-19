@@ -236,7 +236,9 @@
 
 				// Set the luminance (0-1.0) here:
 				// Gamma defaults to 2.4 (for Samsung S6)
-				luminosityPass.uniforms['opacity'].value=0.5;
+				luminosityPass.uniforms['intensity1'].value=0.2;
+				luminosityPass.uniforms['intensity2'].value=0.8;
+				luminosityPass.uniforms['canvas_half'].value=1300.0; // # of pixels halfway across screen horiz.: for L/R split, TODO: calc., not hard-code
 
 				document.body.appendChild( VRButton.createButton( renderer ) );
 
