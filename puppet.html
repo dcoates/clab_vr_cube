@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>CLAB VR Disparity Objects (puppet)</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+	<div id="info">CLAB VR Disparity Objects (puppet)</div>
+
+        <script src="loglevel.min.js"></script>
+        <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+        <script src="mypeer.js" type="text/javascript"> </script>
+        <script src="helpers.js" type="text/javascript"> </script>
+        
+	<script type="module">
+
+		import * as THREE from '../three.js/build/three.module.js';
+
+		import { BoxLineGeometry } from '../three.js/examples/jsm/geometries/BoxLineGeometry.js';
+		import { VRButton } from '../three.js/examples/jsm/webxr/VRButton.js';
+		//import {WebGLRenderer } from './WebGLRenderer.js'; // Our hacked version (to hard-code position)
+		import { EffectComposer } from '../three.js/examples/jsm/postprocessing/EffectComposer.js';
+		import { RenderPass } from '../three.js/examples/jsm/postprocessing/RenderPass.js';
+		//import { GlitchPass } from '../three.js/examples/jsm/postprocessing/GlitchPass.js';
+		import { ShaderPass } from '../three.js/examples/jsm/postprocessing/ShaderPass.js';
+		import { LumGammaShader } from './lum_gamma_shader.js';
+
+		// Global variables: only list variables here, no code 
+		var clock = new THREE.Clock();
+		var thePeer; // For our PC communication
+            
+		// Control of trial sequence
+		var trial_num=0; // Count up which trial we are on
+		const MAX_TRIALS=60; //number in list X no of repeats
+		var disparityList=[0.05, 0.1, 0.15, 0.20, 0.25, 0.3];
+		var disparityTrials; // Populate this in init() with a long sequence of those disparities, randomized
+			
+		// Variables for each trial
+		var scale_base=1.0;
+		var zpos_base=-4;
+		//var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
+		var which_is_target=-1; //which one was the target on the "current" trial
+        
+		// This function is called each time a key is hit
+		function handle_key(e) {
+			    
+				// As soon as a key is pressed, send to the PC what the subject typed (phone doesn't care)
+				// and information about the trial.
+				thePeer.send('X A'+trial_num+ " "+e.keyCode);
+				thePeer.send('X B'+trial_num+ " "+which_is_target);
+				thePeer.send('X C'+trial_num+ " "+room.children[0].position.z);
+				thePeer.send('X D'+trial_num+ " "+room.children[1].position.z);
+				thePeer.send('X E'+trial_num+ " "+room.children[2].position.z);
+				thePeer.send('X F'+trial_num+ " "+room.children[0].scale.x);
+				thePeer.send('X G'+trial_num+ " "+room.children[1].scale.x);
+				thePeer.send('X H'+trial_num+ " "+room.children[2].scale.x);
+
+				// Choose the next target
+				which_is_target=parseInt(Math.random()*3);
+	            
+				// Get the zpos for the next target from the trial sequence
+				var zpos_target=zpos_base+disparityTrials[trial_num];
+                
+				// Update all cubes
+				for ( var i = 0; i < room.children.length; i ++ ) {
+					var cube = room.children[ i ];
+					var jitter_size=Math.random()*0.2-0.1; // choose random between -0.05 and +0.05 // TODO: this is jitter between -0.1 and 0.4 : is ok?
+
+					cube.scale.x=jitter_size+scale_base;
+					cube.scale.y=jitter_size+scale_base;
+					
+					cube.rotation.z=Math.floor(Math.random() * 10)*Math.PI/2; //Rotate the texture each time
+					
+					if (i==which_is_target) { 
+						cube.position.z = zpos_target;	// target: set to target zpos
+					} else {
+						cube.position.z = zpos_base;	// other two: zpos_base
+					} ;	
+				};
+
+				trial_num += 1;
+				if (trial_num>MAX_TRIALS+2) {		// add two, since first two are not real trials
+				    room.children[0].scale.x=0.01;	// Make the target to disappear at the end.
+                    room.children[1].scale.x=0.01;	
+                    room.children[2].scale.x=0.01;	
+				};
+				
+
+				
+				room.children[0].position.y=1.6; //Move the cubes back
+                room.children[1].position.y=1.6;
+                room.children[2].position.y=1.6;
+                
+                //setTimeout(erasecubes,1000); // Stimulus duration 1sec: call the erase cube function after 1sec is passed
+                
+                if (trial_num<2) {		
+				    setTimeout(erasecubes,10000)	
+				} else {
+				    setTimeout(erasecubes,1000)
+				};
+				
+		};
+
+			// For three.js:
+			var container;
+			var camera, scene, renderer;
+			var room;
+			var composer;
+			var renderPass;
+			var luminosityPass; // must be global so we can change parameters
+
+			// For PC communication:
+			var handler_uploader={
+				id: function(s) {
+						setTimeout( function() {thePeer.join('a10001');},    500 );
+				},
+				lost: function(s) {log.info(s);},
+				error: function(s) {log.info(s);},
+				connect: function(s) {log.info('paired '+s);},
+				peer_info: function(s) {log.info(s);},
+				unpair: function (s) {log.info('unpaired',s);},
+                    	keyboard: function (nkey) {do_kb(nkey);},
+                    	receive: function (s) {},
+                	};
+			
+			// These are called once to initialize:
+			init();
+
+			// This is the main initialization routine
+			function init() {
+				
+				// Build disparity trial list: First copy the list so that it fills up an array
+				// of length MAX_TRIALS. Then shuffle it.
+				disparityTrials=Array.from({length:MAX_TRIALS}, (e,i) => disparityList[i%disparityList.length]) 
+				var shuffledisparityTrials=shuffle(disparityTrials);
+				var first=[0,0];
+				disparityTrials=first.concat(shuffledisparityTrials);
+
+				// Set up our key handler
+				document.onkeydown = handle_key;
+
+				// Set up communication with the PC
+				thePeer=new MyPeer(handler_uploader);
+				thePeer.init();
+
+				// Set up Three.js scene: from box example.
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x808080 ); //0x000000, 0x202020, 0x404040, 0x606060, 0x808080, 0xA0A0A0, 0xC0C0C0, 0xE0E0E0, 0xFFFFFF
+
+				camera = new THREE.PerspectiveCamera( 120, window.innerWidth / window.innerHeight, 0.1, 100 );
+				
+				camera.position.set( 0, 1.6, 0);
+				//camera.rotation.set(0, Math.PI/2.0, 0); //set in radian 90 degree
+				camera.updateProjectionMatrix();
+				scene.add( camera );
+
+				room = new THREE.LineSegments(
+					new BoxLineGeometry( 10,10,10, 50,50,50).translate( 0, 1.6, 0 ), // first size, second density?
+					new THREE.LineBasicMaterial( { color: 0x000000 } )
+				);
+				
+				scene.add( room );
+
+				//scene.add( new THREE.HemisphereLight( ) );
+
+				var light = new THREE.AmbientLight( 0xffffff,1);
+				light.position.set( 0, 0, 0 ).normalize();
+				scene.add( light );
+            
+				var geometry = new THREE.BoxBufferGeometry( 0.2,0.2,0.2); // use this same geom for all objects
+
+				// 3 Cubes
+				for ( var i = 0; i < 3; i ++ ) {
+					// RGB: 0x808080, half red , "HTML color"
+					var textureSf = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
+					textureSf.wrapS = THREE.RepeatWrapping;
+					textureSf.wrapT = THREE.RepeatWrapping;
+					textureSf.repeat.set( 0.5,0.5 );
+					var materialSf = new THREE.MeshLambertMaterial( { map: textureSf } );
+					var object = new THREE.Mesh( geometry, materialSf, (2,2,2)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
+
+					object.position.x = (i/3.0-1/3); //Math.random() * 1 - 0.5;
+					object.position.y = 1.6; //Math.random() * 1;
+					object.position.z = 0; //Math.random() * 1 - 0.5;
+
+					object.rotation.x = 0; //Math.random() * 2 * Math.PI ;
+					object.rotation.y = 0; //Math.random() * 2 * Math.PI;
+					object.rotation.z = 0//Math.random() * Math.PI/2; //Math.random() * 2 * Math.PI;
+
+					object.scale.x = 1.0; 
+					object.scale.y = 1.0; 
+					object.scale.z = 1.0;
+
+					// This demo was originally animated, moving randomly. Commenting out velocity totally didnt work,
+					// So leave like this, heopefully default of 0,0,0
+					object.userData.velocity = new THREE.Vector3();
+					object.userData.velocity.x = Math.random() * 0.01 - 0.005;
+					//object.userData.velocity.y = Math.random() * 0.01 - 0.005;
+					//object.userData.velocity.z = Math.random() * 0.01 - 0.005;
+
+					room.add( object );
+					
+
+				}
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				renderer.xr.enabled = true;
+				renderer.gammaFactor = 1;
+				container.appendChild( renderer.domElement );
+
+				// Post-processing effects: New luminance filter
+				composer  = new EffectComposer( renderer );
+				renderPass = new RenderPass( scene, camera );
+				composer.addPass( renderPass );
+				luminosityPass = new ShaderPass( LumGammaShader );
+				composer.addPass( luminosityPass );
+
+				// Set the luminance (0-1.0) here:
+				// Gamma defaults to 2.4 (for Samsung S6)
+				luminosityPass.uniforms['intensity1'].value=0.2;
+				luminosityPass.uniforms['intensity2'].value=0.8;
+				luminosityPass.uniforms['canvas_half'].value=1300.0; // # of pixels halfway across screen horiz.: for L/R split, TODO: calc., not hard-code
+
+				document.body.appendChild( VRButton.createButton( renderer ) );
+
+				renderer.setAnimationLoop( render, camera);
+			}
+
+
+				
+            function erasecubes(){
+                room.children[0].position.y=100; //Move the cubes far away/out of sight
+                room.children[1].position.y=100;
+                room.children[2].position.y=100;
+            }
+            
+			function render() {
+				composer.render();
+				//renderer.render( scene, camera );
+				
+			}
+
+		</script>
+	</body>
+</html>
