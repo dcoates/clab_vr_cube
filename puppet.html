@@ -61,6 +61,18 @@ lost: function(s) {log.info(s);},
       receive: receive_commands,
 };
 
+/*
+To update the texture, something like this:
+
+new THREE.TextureLoader().load(
+  "https://images.pexels.com/photos/1089438/pexels-photo-1089438.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+  texture => {
+    //Update Texture
+    this.earthMesh.material.map = texture;
+    this.earthMesh.material.needsUpdate = true;
+  },
+*/
+
 function receive_commands(s) {
 	console.log(s);
 	if (s[0]=="C") { // js commands to execute
