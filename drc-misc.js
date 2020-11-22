@@ -33,6 +33,11 @@ function get_checked(html,value) {
     return document.getElementById(html).checked;
 }
 
+function add_value(html,text_new) {
+    var text=document.getElementById(html).value;
+    text = text + "\n" + text_new;
+    set_value(html,text);
+}
 
 function beep(vol, freq, duration){
 
