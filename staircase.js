@@ -6,7 +6,9 @@
             ori=getRandomInt(4)*90;
         } else if (nafc==2) {
             ori=getRandomInt(2)*180; // (0 or 1) * 180 : L or R
-        }
+        } else if (nafc==3) {
+            ori=getRandomInt(3);
+	}
         return ori;
     }
 
@@ -18,41 +20,66 @@
   5) Update UI: give current value to update Fn
 */
 
+/* metap={
+	staircase_reversals:[1.26,1.26,1.26,1.26,1.12,1.12,1.12,1.12],
+	stair_start:32,
+mocs_spacings:[1.25,1.75,2,2.5,3,5,99],
+	mocs_repeats:10}
+*/
 
+/* trial_params={
+	orientation: 0,
+	size:32
+}*/
 
     // Base class:
     // - curr_trial (woolean, size, etc.)
     // - trial_history   
 
     class staircase {
-            constructor(size,stair_N) {
-                this.stair_N=stair_N; // N-up-1down
-                this.restart(size); 
+   	trial_next={};
+
+            constructor(value_initial,stair_Nup,reversals,nafc) { // TODO: remove AFC
+                this.stair_Nup=stair_Nup; // N-up-1down
+                this.reversals=reversals; // List of reversal values
+                this.restart(value_initial,nafc); 
                 this.plot_log=false;
+
+		// Initialize to something sensible: (just in case)
+   		this.trial_next['value']=1.0;
+   		this.trial_next['which']=0.0;
             }
 
-            restart(size,nafc) {
+            restart(value_initial,nafc) {
                 this.stair_trial=0;
                 this.consecutive_corrects=0;
-                this.stair_size=size; // TODO
-                this.nReversals=0;
+                this.threshold=value_initial;
+                this.nReversalsCompleted=0;
                 this.prev_corr=true; // assume first one correcta (still going "down")
                 this.trial_history=[];
                 this.nafc=nafc;
+
+   		this.trial_next['value']=this.threshold;	// the previous this.value might be wrong
+   		this.trial_next['which']=0;		// random something
             }
 
+		get_trial() {
+			return this.trial_next;
+		}
+
             next() {
-                get_metap(); // TODO: we shouldn't access any UI stuff in here
+		//console.log();
                 do_trial();  // TODO: refactor out of UI
 
                 this.stair_trial += 1;
                 this.compute_mean();
 
-                var val=this.mean_cm/parseFloat(get_value('background'));
-                set_html("lblStair",`Staircase ${this.stair_trial} ${this.nReversals} threshold=${val.toPrecision(4)}`);
+                var val=this.mean_cm/1.0; //parseFloat(get_value('background')); //TODO
+                var s=`Stair trial:${this.stair_trial} revs:${this.nReversalsCompleted} threshold=${val.toPrecision(5)}`;
+		append_value('status',s); // TODO: UI
 
                 // Did enough reversals? 
-                if (this.nReversals>metap.staircase_reversals.length ) { // TODO: rmv from UI
+                if (this.nReversalsCompleted>this.reversals.length ) { // TODO: rmv from UI
                     set_checked( "chkStair", false);
                 }
             }
@@ -71,22 +98,23 @@
                 if (this.plot_log==true) { // Hack: means probably contrast, don't divide out cm
                     this.mean_cm=this.mean_last;
                 } else {
-                    this.mean_cm=this.mean_last/200.0*get_value("box_size");
+                    this.mean_cm=this.mean_last/200.0*200.0; //get_value("box_size"); //TODO
                 }
             }
 
-            update(correct,ori_resp) {
+            update(resp) {
+            	var correct=(resp==this.trial_next['which']);
                 var isReversal = false;
 
                 // N-up-1-down logic
                 if (true) {
-                    var step_size=metap.staircase_reversals[this.nReversals];
-                    var prev_size=this.stair_size;
+                    var step_size=this.reversals[this.nReversalsCompleted];
+                    var prev_value=this.threshold;
 
                     if (correct) {
                         this.consecutive_corrects+=1;
-                        if (this.consecutive_corrects==(this.stair_N-1) ){
-                            this.stair_size /= step_size;
+                        if (this.consecutive_corrects==this.stair_Nup ){
+                            this.threshold /= step_size;
                             this.consecutive_corrects=0;
                             if (! (this.prev_corr)) {
                                 isReversal=true; // first reversal after an error
@@ -99,7 +127,7 @@
                             ;
                         }
                     } else {
-                        this.stair_size *= step_size;
+                        this.threshold *= step_size;
                         this.consecutive_corrects=0;
                         if (this.prev_corr) {
                             isReversal=true; // first wrong after previous correct is considered reversal
@@ -108,16 +136,18 @@
                     }
 
                     if (isReversal) {
-                        this.nReversals += 1;
+                        this.nReversalsCompleted += 1;
                     }
 
                     // Log response -- TODO move out bad UI spaghetti , maybe log elsewhere, not just UI
+			/*
                     set_html("log",get_html("log")+"\n"+
-                        this.stair_trial+","+prev_size+","+trial_params['orientation']+','+ori_resp+','+correct+','+isReversal+','+this.nReversals);
+                        this.stair_trial+","+prev_value+","+trial_params['orientation']+','+ori_resp+','+correct+','+isReversal+','+this.nReversalsCompleted);
+			*/
 
-                    var trial1={'num':this.stair_trial, 'size':prev_size, 'ori': trial_params['orientation'],
-                        'resp': ori_resp, 'is_correct': correct, 'is_reversal': isReversal, 'num_reversals':
-                        this.nReversals, 'dir_reversal_down': this.prev_corr, 'x': this.stair_trial, 'y': prev_size};
+                    var trial1={'num':this.stair_trial, 'size':prev_value, 'ori': this.trial_next['which'],
+                        'resp': resp, 'is_correct': correct, 'is_reversal': isReversal, 'num_reversals':
+                        this.nReversalsCompleted, 'dir_reversal_down': this.prev_corr, 'x': this.stair_trial, 'y': prev_value};
 						// Make aliases for x and y just to make drawing easier
 
                     this.trial_history.push(trial1);
@@ -126,18 +156,27 @@
                         trial1.y = Math.log10(trial1.y)*25.0+100.0 
                     };
 
+			/* 
                     update_graph(trial1) //this.trial_history[this.trial_history.length-1]);
 					app1(this.trial_history); // TODO
+			*/
+
                     // Get next one:
                     var oriNew=generate_ori(this.nafc) 
+
                     // Set up trial parameters, which are merged with the code to do 1 trial
+/*
                     set_value("trial",`trial_params={\n\torientation: ${oriNew},
-                        \n\tsize:${this.stair_size},
+                        \n\tsize:${this.threshold},
                         \n\tcontrast:${this.contrast}
                     }`);
+*/
+
+			this.trial_next['which']=oriNew;
+			this.trial_next['value']=this.threshold; // redundant?
 
                     // Finished ?
-                    if (this.nReversals>=metap.staircase_reversals.length ) {
+                    if (this.nReversalsCompleted>=this.reversals.length ) {
                         set_checked( "chkStair", false); // TODO: out of UI
                 	var val=this.mean_cm/parseFloat(get_value('background'));
                         set_html("lblStair",`FINISHED threshold=${val.toPrecision(4)}`);
