@@ -9,15 +9,19 @@
 <body style="background-color:#000000" onload="load_code()">  
 
 <div class="split left" id='lefty'>
-<div id="spreadsheet" style='overflow:"hidden";'></div>
+	<div id="spreadsheet" style='overflow:"hidden";'></div>
 </div>
-<div class="split right" id='righty'>
-<button id="btn-clear" onclick="clear_status();" style="border-radius:4px;">Clear</button>
-<textarea  name="status" id="status" style="width:100%;height:50%;">Status</textarea>
-<button id="btn-send" onclick="send_message();" style="border-radius:4px;">Send</button>
-<textarea  name="commands" id="commands" style="width:100%;height:20%;">Enter Commands</textarea>
 
-<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:4px;">Begin Staircase</button>
+<div class="split right" id='righty'>
+	<button id="btn-clear" onclick="clear_status();" style="border-radius:4px;">Clear</button>
+	<textarea  name="status" id="status" style="width:100%;height:50%;">Status</textarea>
+	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
+	<textarea  name="commands" id="commands" style="width:100%;height:20%;">Enter Commands</textarea>
+	
+	<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:4px;">Begin Staircase</button>
+
+  	<label for="timeout">Timeout:</label>
+	<input type="text" id="timeout" title="Enter timeout" size="8" value="1000">
 </div>
 
 <script src="https://d3js.org/d3.v4.js"></script>
@@ -46,19 +50,27 @@ function load_code() {
 	// Read "command line" parameters
 	location.search.substr(1).split("&").forEach(function(item) {dict_params[item.split("=")[0]] = item.split("=")[1]})
 
-		peer_init();
+	peer_init();
 
 	// Set up our key handler
 	document.onkeydown = handle_key;
 };
 
+var header=['value','target','resp','zpos_base','scale1','scale2','scale3'];
+
 function begin_staircase() {
+
+	trial_num=0;
+
+	hot.clear();
+	hot.populateFromArray(0,0,[header]);
+
 	append_value('status','BEGIN STAIRCASE');
 	theStaircase.restart(0.3,3);
 	theStaircase.next(); // show first trial
 }
 
-function send_message() {
+function send_command() {
 	thePeer.send("C "+get_value('commands'));
 }
 
@@ -71,18 +83,28 @@ function debug_msg(s) {
 	append_value('status',s);
 }
 
+var trial_num=0; // TODO: staircase has its own version
+
 // Variables for each trial
 var scale_base=1.0;
 var zpos_base=-4;
 //var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
 var which_is_target=-1; //which one was the target on the "current" trial
+var num_items=3;
 
+var COL_THRESH=0;
+var COL_WHICH_TARGET=1;
+var COL_RESP=2;
+var COL_REV=3;
+var COL_SCALES=4;
+var COL_ZPOS_BASE=5;
+var COL_SCALES=6;
 
 function do_trial() {
 	var trial_next=theStaircase.get_trial();
 	var which=trial_next['which'];
 	var val=trial_next['value'];
-	var s='\nTRIAL which='+which+' val='+val];
+	var s='\nTRIAL which='+which+' val='+val;
 	append_value('status',s);
 
 	// Auto-scroll
@@ -93,29 +115,41 @@ function do_trial() {
 
 	// *** Setup next trial: ***
 
-	// Get the zpos for the next target from the trial sequence
-	var zpos_target=zpos_base+val;
+	// Spreadsheet
+	hot.setDataAtCell(trial_num+1,COL_THRESH,val);
+	hot.setDataAtCell(trial_num+1,COL_WHICH_TARGET,which);
+	hot.setDataAtCell(trial_num+1,COL_ZPOS_BASE,zpos_base);
 
-	// Update all cubes
-	for ( var i = 0; i < room.children.length; i ++ ) {
-		var cube = room.children[ i ];
-		var jitter_size=Math.random()*0.2-0.1; // choose random between -0.05 and +0.05 // TODO: this is jitter between -0.1 and 0.4 : is ok?
+	var s=""; // The update string to send
 
-		cube.scale.x=jitter_size+scale_base;
-		cube.scale.y=jitter_size+scale_base;
+	// For all items
+	for ( var i = 0; i < num_items; i ++ ) {
+		var jitter=Math.random()*0.2-0.1; // choose random between -0.1 and +0.1 
+		var jittered_scale=scale_base+jitter;
+		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time // TODO: this was 10. Seemed weird.
+		var zpos=zpos_base;
+		if (i==which) { 
+			zpos += val;	// target: change disparity
+		};	
 
-		cube.rotation.z=Math.floor(Math.random() * 10)*Math.PI/2; //Rotate the texture each time
+		// Update our spreadsheet 
+		hot.setDataAtCell(trial_num+1,COL_SCALES+i,jittered_scale);
 
-		if (i==which_is_target) { 
-			cube.position.z = zpos_target;	// target: set to target zpos
-		} else {
-			cube.position.z = zpos_base;	// other two: zpos_base
-		} ;	
+		// Build the command string to send to the phone
+		var cube ='room.children['+i+']';
+		s += cube+'.scale.x='+jittered_scale+';'
+		s += cube+'.scale.y='+jittered_scale+';'
+		s += cube+'.rotation.z='+rot+';'
+		s += cube+'.position.z='+zpos+';'
+		s += cube+'.position.z='+zpos+';'
+		s += cube+'.position.y=1.6;' // restore to visible
 	};
 
+	s += "setTimeout(erasecubes,"+get_value('timeout')+');'; // set erase time-out
 
-
-}
+	console.log(s);
+	thePeer.send("C "+s);
+};
 
 function handle_key(e) {
 	var resp;
@@ -137,7 +171,12 @@ function handle_key(e) {
 	var s='KEY '+keycode+' RESP '+resp;
 	append_value('status',s);
 
+	trial_num += 1;
 	theStaircase.update(resp); 
+
+	// Update our spreadsheet (put results to previous trials)
+	hot.setDataAtCell(trial_num,COL_RESP,resp);
+	hot.setDataAtCell(trial_num,COL_RESP,resp);
 }
 
 var data = function () {
