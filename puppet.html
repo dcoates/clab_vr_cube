@@ -86,15 +86,8 @@ init();
 // This is the main initialization routine
 function init() {
 
-	// Build disparity trial list: First copy the list so that it fills up an array
-	// of length MAX_TRIALS. Then shuffle it.
-	disparityTrials=Array.from({length:MAX_TRIALS}, (e,i) => disparityList[i%disparityList.length]) 
-		var shuffledisparityTrials=shuffle(disparityTrials);
-	var first=[0,0];
-	disparityTrials=first.concat(shuffledisparityTrials);
-
 	// Set up our key handler
-	document.onkeydown = handle_key;
+	//document.onkeydown = handle_key;
 
 	// Set up communication with the PC
 	thePeer=new MyPeer(handler_uploader);
