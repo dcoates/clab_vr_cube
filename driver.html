@@ -56,7 +56,7 @@ function load_code() {
 	document.onkeydown = handle_key;
 };
 
-var header=['value','target','resp','zpos_base','scale1','scale2','scale3'];
+var header=['value','target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3'];
 
 function begin_staircase() {
 
@@ -96,7 +96,7 @@ var COL_THRESH=0;
 var COL_WHICH_TARGET=1;
 var COL_RESP=2;
 var COL_REV=3;
-var COL_SCALES=4;
+var COL_MEAN=4;
 var COL_ZPOS_BASE=5;
 var COL_SCALES=6;
 
@@ -176,7 +176,8 @@ function handle_key(e) {
 
 	// Update our spreadsheet (put results to previous trials)
 	hot.setDataAtCell(trial_num,COL_RESP,resp);
-	hot.setDataAtCell(trial_num,COL_RESP,resp);
+	hot.setDataAtCell(trial_num,COL_REV,theStaircase.nReversalsCompleted);
+	hot.setDataAtCell(trial_num,COL_MEAN,theStaircase.mean_last);
 }
 
 var data = function () {
