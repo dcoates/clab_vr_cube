@@ -21,16 +21,20 @@ import * as THREE from '../three.js/build/three.module.js';
 
 import { BoxLineGeometry } from '../three.js/examples/jsm/geometries/BoxLineGeometry.js';
 import { VRButton } from '../three.js/examples/jsm/webxr/VRButton.js';
+//import {WebXRManager } from './WebXRManager.js'; // Our hacked version (to hard-code position)
 //import {WebGLRenderer } from './WebGLRenderer.js'; // Our hacked version (to hard-code position)
 import { EffectComposer } from '../three.js/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from '../three.js/examples/jsm/postprocessing/RenderPass.js';
 //import { GlitchPass } from '../three.js/examples/jsm/postprocessing/GlitchPass.js';
+//import { CopyPass } from '../three.js/examples/jsm/postprocessing/CopyPass.js';
 import { ShaderPass } from '../three.js/examples/jsm/postprocessing/ShaderPass.js';
 import { LumGammaShader } from './lum_gamma_shader.js';
+import { CopyShader } from "../three.js/examples/jsm/shaders/CopyShader.js";
 
 // Global variables: only list variables here, no code 
 var clock = new THREE.Clock();
-var thePeer; // For our PC communication
+var thePeer;    // For our PC communication
+var driver_id;  // load_code will init
 
 var trial_num=0; // Count up which trial we are on
 
@@ -50,7 +54,7 @@ var luminosityPass; // must be global so we can change parameters
 // For PC communication:
 var handler_uploader={
 id: function(s) {
-	    setTimeout( function() {thePeer.join('a10001');},    500 );
+	    setTimeout( function() {thePeer.join(driver_id);},    500 );
     },
 lost: function(s) {log.info(s);},
       error: function(s) {log.info(s);},
@@ -80,11 +84,18 @@ function receive_commands(s) {
 	}
 }
 
-// These are called once to initialize:
+// This is called once to initialize:
+var dict_params = {}; // GLOBAL
 init();
-
-// This is the main initialization routine
 function init() {
+	// Read "command line" parameters
+	location.search.substr(1).split("&").forEach(function(item) {dict_params[item.split("=")[0]] = item.split("=")[1]})
+
+    if ('driver_id' in dict_params) {
+        driver_id=dict_params['driver_id'];
+    } else { 
+        driver_id='a10001';
+    }
 
 	// Set up our key handler
 	//document.onkeydown = handle_key;
@@ -150,13 +161,16 @@ function init() {
 	renderer.xr.enabled = true;
 	renderer.gammaFactor = 1;
 	container.appendChild( renderer.domElement );
+    document.rend=renderer;
 
 	// Post-processing effects: New luminance filter
 	composer  = new EffectComposer( renderer );
 	renderPass = new RenderPass( scene, camera );
 	composer.addPass( renderPass );
 	luminosityPass = new ShaderPass( LumGammaShader );
-	composer.addPass( luminosityPass );
+	//var copyPass = new ShaderPass( CopyShader ); 
+	//composer.addPass( copyPass );
+    // Even this doesn't work. It seems to be that the WebXR animate/render goes directly to the frameBuffer
 
 	// Set the luminance (0-1.0) here:
 	// Gamma defaults to 2.4 (for Samsung S6)
