@@ -16,6 +16,7 @@
 	<button id="btn-clear" onclick="clear_status();" style="border-radius:4px;">Clear</button>
 	<textarea  name="status" id="status" style="width:100%;height:50%;">Status</textarea>
 	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
+	<button id="btn-sendXRshader" onclick="send1('setupXRshader()');">InitXR</button>
 	<textarea  name="commands" id="commands" style="width:100%;height:20%;">Enter Commands</textarea>
 	
 	<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:4px;">Begin Staircase</button>
@@ -70,8 +71,11 @@ function begin_staircase() {
 	theStaircase.next(); // show first trial
 }
 
+function send1(s) {
+	thePeer.send("C "+s);
+}
 function send_command() {
-	thePeer.send("C "+get_value('commands'));
+	send1(get_value('commands'));
 }
 
 function clear_status() {

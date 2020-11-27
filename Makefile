@@ -2,6 +2,9 @@
 upload:
 	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git pull"
 
+stashup:
+	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git stash; git pull"
+
 xdiff:
 	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git diff"
 
