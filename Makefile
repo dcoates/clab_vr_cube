@@ -1,6 +1,6 @@
 # From my computer, call into server to sync online version
 upload:
-	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git pull"
+	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git pull; chmod 777 *.html"
 
 stashup:
 	ssh -p 7822 185.146.28.139 "cd /var/www/html/clab_vr_cube; git stash; git pull"
