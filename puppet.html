@@ -21,15 +21,8 @@ import * as THREE from '../three.js/build/three.module.js';
 
 import { BoxLineGeometry } from '../three.js/examples/jsm/geometries/BoxLineGeometry.js';
 import { VRButton } from '../three.js/examples/jsm/webxr/VRButton.js';
-//import {WebXRManager } from './WebXRManager.js'; // Our hacked version (to hard-code position)
-//import {WebGLRenderer } from './WebGLRenderer.js'; // Our hacked version (to hard-code position)
-import { EffectComposer } from '../three.js/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from '../three.js/examples/jsm/postprocessing/RenderPass.js';
-//import { GlitchPass } from '../three.js/examples/jsm/postprocessing/GlitchPass.js';
-//import { CopyPass } from '../three.js/examples/jsm/postprocessing/CopyPass.js';
 import { ShaderPass } from '../three.js/examples/jsm/postprocessing/ShaderPass.js';
 import { LumGammaShader } from './lum_gamma_shader.js';
-import { CopyShader } from "../three.js/examples/jsm/shaders/CopyShader.js";
 
 // Global variables: only list variables here, no code 
 var clock = new THREE.Clock();
@@ -47,9 +40,13 @@ function handle_key(e) {
 var container;
 var camera, scene, renderer;
 var room;
-var composer;
-var renderPass;
-var luminosityPass; // must be global so we can change parameters
+
+// Our new post-processing shader:
+var luminosityPass = null; // must be global so we can change parameters
+var baseLayer = null; 
+var renderTarget = null;
+var XRready= false;
+var cameraVR = null;
 
 // For PC communication:
 var handler_uploader={
@@ -82,6 +79,39 @@ function receive_commands(s) {
 	if (s[0]=="C") { // js commands to execute
 		eval(s.substr(2));
 	}
+}
+
+const texName='XRtemp.rt1';
+
+function setGlobals(params) {
+    Object.keys(params).map(function(key,index) {
+        luminosityPass.uniforms[key].value=params[key];
+    });
+}
+
+function setupShader(wid) {
+	if ( wid === undefined ) {
+        wid=100; //testing/debugging
+        }
+	luminosityPass = new ShaderPass( LumGammaShader );
+
+	// Set the luminance (0-1.0) here:
+	// Gamma defaults to 2.4 (for Samsung S6)
+    var defaults={'intensity1':1.0, 'intensity2':1.0,
+            'con1':1.0, 'con2':0.75, 'canvas_half':wid};
+    setGlobals(defaults);
+}
+
+function setupXRshader() {
+    console.log('Trying setupXR');
+    baseLayer=document.rend.xr.getSession().renderState.baseLayer;
+    renderTarget = new THREE.WebGLRenderTarget( baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+    renderTarget.texture.name = 'XRtemp.rt1';
+    setupShader(baseLayer.framebufferWidth/2.0);
+    XRready=true;
+	console.log(baseLayer.framebufferWidth, baseLayer.framebufferHeight); 
+}
+function obf(renderer, scene, camera, local_renderTarget) {
 }
 
 // This is called once to initialize:
@@ -163,20 +193,7 @@ function init() {
 	container.appendChild( renderer.domElement );
     document.rend=renderer;
 
-	// Post-processing effects: New luminance filter
-	composer  = new EffectComposer( renderer );
-	renderPass = new RenderPass( scene, camera );
-	composer.addPass( renderPass );
-	luminosityPass = new ShaderPass( LumGammaShader );
-	//var copyPass = new ShaderPass( CopyShader ); 
-	//composer.addPass( copyPass );
-    // Even this doesn't work. It seems to be that the WebXR animate/render goes directly to the frameBuffer
-
-	// Set the luminance (0-1.0) here:
-	// Gamma defaults to 2.4 (for Samsung S6)
-	luminosityPass.uniforms['intensity1'].value=0.2;
-	luminosityPass.uniforms['intensity2'].value=0.8;
-	luminosityPass.uniforms['canvas_half'].value=1300.0; // # of pixels halfway across screen horiz.: for L/R split, TODO: calc., not hard-code
+    //scene.onBeforeRender=obf; // this will eventually be useful (to get cameras)
 
 	document.body.appendChild( VRButton.createButton( renderer ) );
 
@@ -190,10 +207,38 @@ function erasecubes(){
 }
 
 function render() {
-	//composer.render();
-	renderer.render( scene, camera );
 
+    if (XRready) {
+
+        renderer.setRenderTarget( renderTarget );
+		renderer.setViewport( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+		renderer.setScissor ( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+        renderer.xr.enabled=true; // to prevent it from overriding camera
+	    renderer.render( scene, camera );
+
+        // Set the copy target to the actual real layer than WebXR uses
+        renderer.setFramebuffer( baseLayer.framebuffer );
+		renderer.setViewport( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+		renderer.setScissor ( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+	    renderer.setDrawingBufferSize ( baseLayer.framebufferWidth, baseLayer.framebufferHeight, 1.0 );
+
+        luminosityPass.renderToScreen=true; // Don't use a renderTarget; use the FB we set above
+        renderer.xr.enabled=false; // to prevent it from overriding camera
+        luminosityPass.render( renderer, null, renderTarget ); //, baseLayer.framebuffer, texName );
+    } else {
+        if  (false) { // This does non-VR with our post-proc shader (need to send renderTarget first though)
+            luminosityPass.renderToScreen=false; // Render to texture
+            renderer.setRenderTarget( renderTarget );
+	        renderer.render( scene, camera );
+
+            luminosityPass.renderToScreen=true; // Don't use a renderTarget; use the FB we set above
+            luminosityPass.render( renderer, null, renderTarget );
+        } else { // non-VR, no post-proc shader:
+	        renderer.render( scene, camera );
+        }
+    }
 }
+
 
 </script>
 </body>
