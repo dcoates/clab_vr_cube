@@ -81,8 +81,6 @@ function receive_commands(s) {
 	}
 }
 
-const texName='XRtemp.rt1';
-
 function setGlobals(params) {
     Object.keys(params).map(function(key,index) {
         luminosityPass.uniforms[key].value=params[key];
@@ -166,12 +164,12 @@ function init() {
 	// 3 Cubes
 	for ( var i = 0; i < 3; i ++ ) {
 		// RGB: 0x808080, half red , "HTML color"
-		var textureSf = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
+		var textureSf = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
 		textureSf.wrapS = THREE.RepeatWrapping;
 		textureSf.wrapT = THREE.RepeatWrapping;
-		textureSf.repeat.set( 0.5,0.5 );
+		textureSf.repeat.set( 0.25,0.25 );
 		var materialSf = new THREE.MeshLambertMaterial( { map: textureSf } );
-		var object = new THREE.Mesh( geometry, materialSf, (2,2,2)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
+		var object = new THREE.Mesh( geometry, materialSf, (1,1,1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
 		object.position.x = (i/3.0-1/3); //Math.random() * 1 - 0.5;
 		object.position.y = 1.6; //Math.random() * 1;
@@ -192,11 +190,8 @@ function init() {
 	renderer.gammaFactor = 1;
 	container.appendChild( renderer.domElement );
     document.rend=renderer;
-
     //scene.onBeforeRender=obf; // this will eventually be useful (to get cameras)
-
 	document.body.appendChild( VRButton.createButton( renderer ) );
-
 	renderer.setAnimationLoop( render, camera);
 }
 
@@ -224,7 +219,7 @@ function render() {
 
         luminosityPass.renderToScreen=true; // Don't use a renderTarget; use the FB we set above
         renderer.xr.enabled=false; // to prevent it from overriding camera
-        luminosityPass.render( renderer, null, renderTarget ); //, baseLayer.framebuffer, texName );
+        luminosityPass.render( renderer, null, renderTarget ); 
     } else {
         if  (false) { // This does non-VR with our post-proc shader (need to send renderTarget first though)
             luminosityPass.renderToScreen=false; // Render to texture
