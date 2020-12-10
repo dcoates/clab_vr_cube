@@ -17,7 +17,13 @@
 	<textarea  name="status" id="status" style="width:100%;height:50%;">Status</textarea>
 	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
 	<button id="btn-sendXRshader" onclick="send1('setupXRshader()');">InitXR</button>
-	<button id="btn-sendSf8" onclick="send1('texturedroom.material.map=sf8;texturedroom.material.needsUpdate=true;');">Sf8</button>
+	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';">BKG-1cpi</button>
+	<button id="btn-sendBKG-4cpi" onclick="send1('texturedroom.material.map=BKG4;texturedroom.material.needsUpdate=true;');">BKG-4cpi</button>
+	<button id="btn-sendBKG-8cpi" onclick="send1('texturedroom.material.map=BKG8;texturedroom.material.needsUpdate=true;');">BKG-8cpi</button>
+	<br>
+	<button id="btn-sendTGT-1cpi" onclick="send1('object.material.map=TGT1;object.material.needsUpdate=true;');">TGT-1cpi</button>
+	<button id="btn-sendTGT-4cpi" onclick="send1('object.material.map=TGT4;object.material.needsUpdate=true;');">TGT-4cpi</button>
+	<button id="btn-sendTGT-8cpi" onclick="send1('object.material.map=TGT8;object.material.needsUpdate=true;');">TGT-8cpi</button>
 	<textarea  name="commands" id="commands" style="width:100%;height:20%;">Enter Commands</textarea>
 	
 	<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:4px;">Begin Staircase</button>
@@ -44,6 +50,10 @@
 var graphs=[];
 var graphs_color_state=[];
 var dict_params = {} // GLOBAL
+var background='BKG10';
+
+
+
 
 var reversals=[ 1.26,1.26,1.26,1.26,1.12,1.12,1.12,1.12];
 var theStaircase=new staircase(0.3,3,reversals,3); // 3-up 1-down, start@0.3,3 AFC
@@ -58,9 +68,11 @@ function load_code() {
 	document.onkeydown = handle_key;
 };
 
-var header=['value','target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3'];
+var header=['value','target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3','Background'];
 
 function begin_staircase() {
+    
+    send1('texturedroom.material.map='+background+';texturedroom.material.needsUpdate=true;')
 
 	trial_num=0;
 
@@ -103,7 +115,9 @@ var COL_RESP=2;
 var COL_REV=3;
 var COL_MEAN=4;
 var COL_ZPOS_BASE=5;
-var COL_SCALES=6;
+var COL_SCALES=6; 
+// Column 6,7,8 are for scale
+var COL_BACKGROUND=9;
 
 function do_trial() {
 	var trial_next=theStaircase.get_trial();
@@ -124,17 +138,20 @@ function do_trial() {
 	hot.setDataAtCell(trial_num+1,COL_THRESH,val);
 	hot.setDataAtCell(trial_num+1,COL_WHICH_TARGET,which);
 	hot.setDataAtCell(trial_num+1,COL_ZPOS_BASE,zpos_base);
+	hot.setDataAtCell(trial_num+1,COL_BACKGROUND,background);
+
 
 	var s=""; // The update string to send
 
 	// For all items
 	for ( var i = 0; i < num_items; i ++ ) {
-		var jitter=Math.random()*0.2-0.1; // choose random between -0.1 and +0.1 
+		var jitter=Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
 		var jittered_scale=scale_base+jitter;
 		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time // TODO: this was 10. Seemed weird.
 		var zpos=zpos_base;
 		if (i==which) { 
 			zpos += val;	// target: change disparity
+            //jittered_scale=scale_base-5*jitter;
 		};	
 
 		// Update our spreadsheet 

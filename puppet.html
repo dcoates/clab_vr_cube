@@ -62,15 +62,41 @@ lost: function(s) {log.info(s);},
       receive: receive_commands,
 };
 
-//New textured room
+//Create background,BKG
 var texturedroomgeometry = new THREE.BoxGeometry (10,10,10);
-var sf1 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
-var sf4 = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
-var sf8 = THREE.ImageUtils.loadTexture( './sf_texture8.00.png' );
-var texturedsf1 = new THREE.MeshLambertMaterial( { map: sf1, side: THREE.BackSide } );
+var BKG1 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
+BKG1.wrapS = THREE.RepeatWrapping;
+BKG1.wrapT = THREE.RepeatWrapping;
+BKG1.repeat.set( 38,38);
+var BKG4 = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
+BKG4.wrapS = THREE.MirroredRepeatWrapping;
+BKG4.wrapT = THREE.MirroredRepeatWrapping;
+BKG4.repeat.set( 38,38);
+var BKG8 = THREE.ImageUtils.loadTexture( './sf_texture8.00.png' );
+BKG8.wrapS = THREE.MirroredRepeatWrapping;
+BKG8.wrapT = THREE.MirroredRepeatWrapping;
+BKG8.repeat.set( 38,38);
+var texturedsf1 = new THREE.MeshLambertMaterial( { map: BKG1, side: THREE.BackSide } );
 //var texturedsf4 = new THREE.MeshLambertMaterial( { map: sf4, side: THREE.BackSide } );
 //var texturedsf8 = new THREE.MeshLambertMaterial( { map: sf8, side: THREE.BackSide } );
 var texturedroom;
+
+//Create target, TGT
+var targetgeometry = new THREE.BoxBufferGeometry( 0.21,0.21,0.21); // 0.21 is equal ~3deg
+var TGT1 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
+TGT1.wrapS = THREE.RepeatWrapping;
+TGT1.wrapT = THREE.RepeatWrapping;
+TGT1.repeat.set( 1,1 );
+var TGT4 = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
+TGT4.wrapS = THREE.RepeatWrapping;
+TGT4.wrapT = THREE.RepeatWrapping;
+TGT4.repeat.set( 1,1 );
+var TGT8 = THREE.ImageUtils.loadTexture( './sf_texture8.00.png' );
+TGT8.wrapS = THREE.RepeatWrapping;
+TGT8.wrapT = THREE.RepeatWrapping;
+TGT8.repeat.set( 1,1 );
+var targetSf = new THREE.MeshLambertMaterial( { map: TGT1 } );
+var object;
 
 /*
 To update the texture, something like this:
@@ -149,7 +175,7 @@ function init() {
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x808080 ); //0x000000, 0x202020, 0x404040, 0x606060, 0x808080, 0xA0A0A0, 0xC0C0C0, 0xE0E0E0, 0xFFFFFF
 
-	camera = new THREE.PerspectiveCamera( 120, window.innerWidth / window.innerHeight, 0.1, 100 );
+	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 100 );//The FOV is reset as it enters the VR mode, I suspect 90deg based on my calculation
 
 	camera.position.set( 0, 0, 0);
 	//camera.rotation.set(0, Math.PI/2.0, 0); //set in radian 90 degree
@@ -171,17 +197,11 @@ function init() {
 	light.position.set( 0, 0, 0 ).normalize();
 	scene.add( light );
 
-	var geometry = new THREE.BoxBufferGeometry( 0.2, 0.2, 0.2); // use this same geom for all objects
+	object = new THREE.Mesh( targetgeometry, targetSf, (1,1,1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
 	// 3 Cubes
 	for ( var i = 0; i < 3; i ++ ) {
-		// RGB: 0x808080, half red , "HTML color"
-		//var textureSf = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
-		//textureSf.wrapS = THREE.RepeatWrapping;
-		//textureSf.wrapT = THREE.RepeatWrapping;
-		//textureSf.repeat.set( 0.25,0.25 );
-		var materialSf = new THREE.MeshLambertMaterial( { map: sf8 } );
-		var object = new THREE.Mesh( geometry, materialSf, (1,1,1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
+        object = new THREE.Mesh( targetgeometry, targetSf, (1,1,1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
 		object.position.x = (i/3.0-1/3); //Math.random() * 1 - 0.5;
 		object.position.y = 1.6; //Math.random() * 1;

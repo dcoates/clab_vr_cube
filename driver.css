@@ -17,10 +17,10 @@
 
 /* Control the right side */
 .right {
-  right: 5%;
-  width: 40%;
+  right: 1%;
+  width: 20%;
   top: 5%;
-  height: 90%;
+  height: 100%;
   background-color: #c0c0c0;
   border-color: teal;
   border-style: solid;
