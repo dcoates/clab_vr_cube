@@ -255,45 +255,45 @@ function updateClock() {
 
 function peer_init() {
 	var handler={
-id: function(s) {
-	    log.info('my-id','ID:'+s);
-	    if ('autoconnect' in dict_params) { 
-		    setTimeout( function() {thePeer.join(dict_params['autoconnect']);}, 500 );
-	    }
-    },
-lost: function(s) {log.info('status',s);},
-      error: function(s) {log.info('status',s);},
-      connect: function(s) {
-	      log.error('status','Paired:'+ s);
-	      log.error('receiver-id',s+': OK');
-	      append_value('status','CONNECT '+s);
-      },
-peer_info: function(s) {log.info(s);},
-	   unpair: function (s) {log.info ('status',s);},
-	   keyboard: function (nkey) {do_kb(nkey);},
-	   receive: function (s) {receive_message(s);}
-	}
-	thePeer=new MyPeer(handler);
-	if ('id' in dict_params) { // if id= parameter passed in, use that
-		thePeer.id_requested=dict_params['id'];
-		//thePeer.instructor=true; // not sure if it is instructor or not
-	}
-	thePeer.instructor=true;
+        id: function(s) {
+                log.info('my-id','ID:'+s);
+                if ('autoconnect' in dict_params) { 
+                    setTimeout( function() {thePeer.join(dict_params['autoconnect']);}, 500 );
+                }
+            },
+        lost: function(s) {log.info('status',s);},
+              error: function(s) {log.info('status',s);},
+              connect: function(s) {
+                  log.error('status','Paired:'+ s);
+                  log.error('receiver-id',s+': OK');
+                  append_value('status','CONNECT '+s);
+              },
+        peer_info: function(s) {log.info(s);},
+               unpair: function (s) {log.info ('status',s);},
+               keyboard: function (nkey) {do_kb(nkey);},
+               receive: function (s) {receive_message(s);}
+            }
+    thePeer=new MyPeer(handler);
+    if ('id' in dict_params) { // if id= parameter passed in, use that
+        thePeer.id_requested=dict_params['id'];
+        //thePeer.instructor=true; // not sure if it is instructor or not
+    }
+    thePeer.instructor=true;
 	thePeer.init();
 
 	var handler_uploader={
-id: function(s) {
-	    if ('autoconnect2' in dict_params) { //disable
-		    setTimeout( function() {thePeer2.join(dict_params['autoconnect2']);}, 500 );
-	    }
-    },
-lost: function(s) {log.info(s);},
-      error: function(s) {log.info(s);},
-      connect: function(s) {log.info('paired '+s);},
-      peer_info: function(s) {log.info(s);},
-      unpair: function (s) {log.info('unpaired',s);},
-      keyboard: function (nkey) {do_kb(nkey);},
-      receive: function (s) {;}
+        id: function(s) {
+                if ('autoconnect2' in dict_params) { //disable
+                    setTimeout( function() {thePeer2.join(dict_params['autoconnect2']);}, 500 );
+                }
+            },
+            lost: function(s) {log.info(s);},
+            error: function(s) {log.info(s);},
+            connect: function(s) {log.info('paired '+s);},
+            peer_info: function(s) {log.info(s);},
+            unpair: function (s) {log.info('unpaired',s);},
+            keyboard: function (nkey) {do_kb(nkey);},
+            receive: function (s) {;}
 	}
 
 	// To handle upload, simplest is to just create a new Peer to talk to instructor
@@ -332,7 +332,7 @@ var big_im="";
 function receive_message(s) {
 
 	the_mess=s;
-	console.log("GOT ONE");
+	//console.log("GOT ONE");
 
 	// This was for the Dark Adaptation objects (staircases). We (summation) should just have a string
 	if (typeof(s)=="object") { // upload
@@ -351,10 +351,17 @@ function receive_message(s) {
 		recd=s;
 		var fields=s.split(" ");
 
+		if (fields.length==2) { //Simple 2-code command
+            var code=fields[0];
+
+            if (code=='KB') {
+                handle_key({'keyCode':parseInt(fields[1])});
+            }
+        }
+
 		if (fields.length>2) {
 			var groupid=fields[0];
-
-			if (groupid[0]=='i') {
+            if (groupid[0]=='i') {
 				big_im+=fields[2]; 
 				var contents=fields[1].split('/');
 				if (parseInt(contents[0])+1==parseInt(contents[1])) {
@@ -369,7 +376,7 @@ function receive_message(s) {
 					big_im=""; // clear for next one
 				}
 			} else {
-				var col=fields[1].toUpperCase();
+			    var col=fields[1].toUpperCase();
 				var colnum=col.charCodeAt(0)-65;
 				var row=parseInt(col.substr(1))-1;
 				var dat=fields[2];

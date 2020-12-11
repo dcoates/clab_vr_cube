@@ -33,7 +33,9 @@ var trial_num=0; // Count up which trial we are on
 
 // This function is called each time a key is hit
 function handle_key(e) {
-	// TODO: send key back to driver
+    if (!(thePeer === null) ) {
+        thePeer.send("KB "+event.keyCode); //Send key directly back to driver
+    }
 };
 
 // For three.js:
@@ -162,7 +164,7 @@ function init() {
     }
 
 	// Set up our key handler
-	//document.onkeydown = handle_key;
+	document.onkeydown = handle_key;
 
 	// Set up communication with the PC
 	thePeer=new MyPeer(handler_uploader);
@@ -265,7 +267,6 @@ function render() {
         }
     }
 }
-
 
 </script>
 </body>
