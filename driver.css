@@ -12,17 +12,17 @@
 /* Control the left side */
 .left {
   left: 0;
-  background-color: #808080;
+  background-color: #874C62;
 }
 
 /* Control the right side */
 .right {
   right: 1%;
-  width: 20%;
-  top: 5%;
+  width: 22%;
+  top: 10%;
   height: 100%;
-  background-color: #c0c0c0;
-  border-color: teal;
+  background-color: #A7D2CB;
+  border-color:teal;
   border-style: solid;
 }
 
@@ -49,21 +49,21 @@ input
     padding:0px;
     border:0px;
     overflow:hidden;
-    font-size:14pt;
+    font-size:12pt;
 }
 */
 
 #text{
     position: absolute;
     width: 100%;
-    height: 80%; 
+    height: 100%; 
     /*box-sizing: border-box; */
 }
 
 textarea {
     /*position:absolute;*/
     /* width: 80%; */
-    /* height: 50%; */
+    /* height: 30%; */
     /*top:5%; left:5%; right:0; bottom:0; padding:1em; */
 }
 
@@ -76,7 +76,7 @@ textarea {
 canvas{
     width: 100%; 
     height: 50%;
-    /*height: 150px; */
+    /*height: 100px; */
     /*width: 200px; */
     background-color: gray;
 	margin-left:1px;

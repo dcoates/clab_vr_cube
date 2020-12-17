@@ -12,23 +12,61 @@
 	<div id="spreadsheet" style='overflow:"hidden";'></div>
 </div>
 
+hr.line {border: 1px;}
+  
 <div class="split right" id='righty'>
 	<button id="btn-clear" onclick="clear_status();" style="border-radius:4px;">Clear</button>
-	<textarea  name="status" id="status" style="width:100%;height:50%;">Status</textarea>
-	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
-	<button id="btn-sendXRshader" onclick="send1('setupXRshader()');">InitXR</button>
-	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';">BKG-1cpi</button>
-	<button id="btn-sendBKG-4cpi" onclick="send1('texturedroom.material.map=BKG4;texturedroom.material.needsUpdate=true;');">BKG-4cpi</button>
-	<button id="btn-sendBKG-8cpi" onclick="send1('texturedroom.material.map=BKG8;texturedroom.material.needsUpdate=true;');">BKG-8cpi</button>
-	<br>
-	<button id="btn-sendTGT-1cpi" onclick="send1('object.material.map=TGT1;object.material.needsUpdate=true;');">TGT-1cpi</button>
-	<button id="btn-sendTGT-4cpi" onclick="send1('object.material.map=TGT4;object.material.needsUpdate=true;');">TGT-4cpi</button>
-	<button id="btn-sendTGT-8cpi" onclick="send1('object.material.map=TGT8;object.material.needsUpdate=true;');">TGT-8cpi</button>
-	<textarea  name="commands" id="commands" style="width:100%;height:20%;">Enter Commands</textarea>
+	<textarea  name="status" id="status" style="width:100%;height:30%;">Status</textarea>
 	
-	<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:4px;">Begin Staircase</button>
-
-  	<label for="timeout">Timeout:</label>
+  	<label for="subjectID" style= "position:relative; left:5px;">SubjectID</label>
+	<input type="text" id="subjectID" title="Enter id" size="10"  style= "position:relative; left:8px;" value="">
+	<button id="btn-sendXRshader" onclick="send1('setupXRshader()');" style="border-radius:10px; font-size:16px; background-color: tomato; color:white; position:relative;left:10px;">InitXR</button>
+	<br><br>
+	<label for="BinoLum" style= "position:relative; left:14px;">Bino Lum (%) :</label>
+	<button id="btn-send100Blum" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=1.0;" style= "position:relative; left:24px;">100</button>
+	<button id="btn-send32Blum" onclick="dict_condition['intensity1']=0.32,dict_condition['intensity2']=0.32;" style= "position:relative; left:24px;">32</button>
+	<button id="btn-send10Blum" onclick="dict_condition['intensity1']=0.1,dict_condition['intensity2']=0.1;" style= "position:relative; left:24px;">10</button>
+	<button id="btn-send3.2Blum" onclick="dict_condition['intensity1']=0.032,dict_condition['intensity2']=0.032;" style= "position:relative; left:24px;">3.2</button>
+	<br>
+	<label for="BinoContrast" style= "position:relative; left:4px;">Bino Contrast (%) :</label>
+	<button id="btn-send100Bcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=1.0;">100</button>
+	<button id="btn-send32Bcon" onclick="dict_condition['con1']=0.32,dict_condition['con2']=0.32;">32</button>
+	<button id="btn-send10Bcon" onclick="dict_condition['con1']=0.1,dict_condition['con2']=0.1;">10</button>
+	<button id="btn-send3.2Bcon" onclick="dict_condition['con1']=0.032,dict_condition['con2']=0.032;">3.2</button>
+	<br>
+	<hr class="line">
+	<label for="MonoLum" style= "position:relative; left:13px;"> Mono Lum (%) :</label>
+	<button id="btn-send32Mlum" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=0.32;" style= "position:relative; left:60px;">32</button>
+	<button id="btn-send10Mlum" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=0.1;" style= "position:relative; left:60px;">10</button>
+	<button id="btn-send3.2Mlum" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=0.032;" style= "position:relative; left:60px;">3.2</button>
+	<br>
+	<label for="MonoContrast" style= "position:relative; left:4px;"> Mono Contrast(%) :</label>
+	<button id="btn-send32Mcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=0.32;" style= "position:relative; left:40px;">32</button>
+	<button id="btn-send10Mcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=0.1;" style= "position:relative; left:40px;">10</button>
+	<button id="btn-send3.2Mcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=0.032;" style= "position:relative; left:40px;">3.2</button>
+	<br>
+	<hr class="line">
+	<label for="BKG"  style= "position:relative; left:8px;"> Background SFs: </label>
+	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';" style= "position:relative; left:16px;">1cpi</button>
+	<button id="btn-sendBKG-4cpi" onclick="background='BKG4';" style= "position:relative; left:16px;">4cpi</button>
+	<button id="btn-sendBKG-8cpi" onclick="background='BKG8';" style= "position:relative; left:16px;">8cpi</button>
+	<br>
+	<label for="TGT" style= "position:relative; left:20px;">Target SFs:</label>
+	<button id="btn-sendTGT-1cpi" onclick="targetsf='TGT1';" style= "position:relative; left:55px;">1cpi</button>
+	<button id="btn-sendTGT-4cpi" onclick="targetsf='TGT4';" style= "position:relative; left:55px;">4cpi</button>
+	<button id="btn-sendTGT-8cpi" onclick="targetsf='TGT8';" style= "position:relative; left:55px;">8cpi</button>
+	<br>
+	<br>
+	<button id="btn-reset" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=1.0,
+	        dict_condition['con1']=1.0,dict_condition['con2']=1.0;" style="border-radius:4px; background-color: #D4A437; color:white;">RESET</button>
+	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
+	
+	<textarea  name="commands" id="commands" style="width:100%;height:6%;">Enter Commands</textarea>
+	
+	<button id="btn-start-stair" onclick="begin_staircase();" style="border-radius:5px; font-size:25px; background-color: #0000F0; color:white;padding: 5px 10px 5px 10px">Begin Staircase</button>
+	<button id="btn-copyall" onclick="selectText()" style="border-radius:25px; font-size:20px; background-color:#FFFFFF; padding: 5px 10px 5px 10px;">Copy</button>  
+	<br><br>
+  	<label for="timeout">Timeout (ms):</label>
 	<input type="text" id="timeout" title="Enter timeout" size="8" value="1000">
 </div>
 
@@ -49,11 +87,15 @@
 
 var graphs=[];
 var graphs_color_state=[];
-var dict_params = {} // GLOBAL
-var background='BKG10';
-
-
-
+var dict_condition={'intensity1':1.0,'intensity2':1.0,'con1':1.0,'con2':1.0};
+var dict_params = {}; // GLOBAL
+var background='BKG1';
+var targetsf='TGT1';
+var subject;
+var leftlum=1;
+var rightlum=1;
+var leftcont=1;
+var rightcont=1;
 
 var reversals=[ 1.26,1.26,1.26,1.26,1.12,1.12,1.12,1.12];
 var theStaircase=new staircase(0.3,3,reversals,3); // 3-up 1-down, start@0.3,3 AFC
@@ -68,11 +110,12 @@ function load_code() {
 	document.onkeydown = handle_key;
 };
 
-var header=['value','target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3','Background'];
+var header=['value','which_target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3','Background','TargetSF',"SubjectID","LeftLum","RightLum","LeftContrast","RightContrast"];
 
 function begin_staircase() {
     
-    send1('texturedroom.material.map='+background+';texturedroom.material.needsUpdate=true;')
+    send1('texturedroom.material.map='+background+';texturedroom.material.needsUpdate=true;');
+    send1('setGlobals('+JSON.stringify(dict_condition)+');')
 
 	trial_num=0;
 
@@ -82,6 +125,11 @@ function begin_staircase() {
 	append_value('status','BEGIN STAIRCASE');
 	theStaircase.restart(0.3,3);
 	theStaircase.next(); // show first trial
+}
+
+function selectText() {
+  hot.selectCell(0,0,50,15); //To copy spreadsheet. Number has to be smaller by 1 from the size of the sreadsheet
+  document.execCommand("copy");
 }
 
 function send1(s) {
@@ -118,6 +166,13 @@ var COL_ZPOS_BASE=5;
 var COL_SCALES=6; 
 // Column 6,7,8 are for scale
 var COL_BACKGROUND=9;
+var COL_TARGETSF=10;
+var COL_SUBJECTID=11;
+var COL_LeftLum=12;
+var COL_RightLum=13;
+var COL_LeftContrast=14;
+var COL_RightContrast=15;
+
 
 function do_trial() {
 	var trial_next=theStaircase.get_trial();
@@ -131,7 +186,8 @@ function do_trial() {
 	if (stat.selectionStart>100) { // autoscroll to a few lines before last insertion
 		stat.scrollTop = stat.selectionStart-100;
 	}
-
+    
+    subject=subjectID.value;
 	// *** Setup next trial: ***
 
 	// Spreadsheet
@@ -139,19 +195,21 @@ function do_trial() {
 	hot.setDataAtCell(trial_num+1,COL_WHICH_TARGET,which);
 	hot.setDataAtCell(trial_num+1,COL_ZPOS_BASE,zpos_base);
 	hot.setDataAtCell(trial_num+1,COL_BACKGROUND,background);
+	hot.setDataAtCell(trial_num+1,COL_TARGETSF,targetsf);
+	hot.setDataAtCell(trial_num+1,COL_SUBJECTID,subject);
 
 
 	var s=""; // The update string to send
 
 	// For all items
 	for ( var i = 0; i < num_items; i ++ ) {
-		var jitter=Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
+		var jitter=0;//Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
 		var jittered_scale=scale_base+jitter;
 		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time // TODO: this was 10. Seemed weird.
 		var zpos=zpos_base;
 		if (i==which) { 
 			zpos += val;	// target: change disparity
-            //jittered_scale=scale_base-5*jitter;
+            jittered_scale=-scale_base*zpos/4;
 		};	
 
 		// Update our spreadsheet 
@@ -159,12 +217,12 @@ function do_trial() {
 
 		// Build the command string to send to the phone
 		var cube ='room.children['+i+']';
-		s += cube+'.scale.x='+jittered_scale+';'
-		s += cube+'.scale.y='+jittered_scale+';'
-		s += cube+'.rotation.z='+rot+';'
-		s += cube+'.position.z='+zpos+';'
-		s += cube+'.position.z='+zpos+';'
-		s += cube+'.position.y=1.6;' // restore to visible
+		s += cube+'.scale.x='+jittered_scale+';';
+		s += cube+'.scale.y='+jittered_scale+';';
+		s += cube+'.rotation.z='+rot+';';
+		s += cube+'.position.z='+zpos+';';
+		s += cube+'.position.z='+zpos+';';
+		s += cube+'.position.y=1.6;'; // restore to visible
 	};
 
 	s += "setTimeout(erasecubes,"+get_value('timeout')+');'; // set erase time-out
@@ -204,7 +262,7 @@ function handle_key(e) {
 
 var data = function () {
 	//rows,cols
-	return Handsontable.helper.createEmptySpreadsheetData(20, 10);
+	return Handsontable.helper.createEmptySpreadsheetData(51, 16);
 };
 
 const container = document.getElementById('spreadsheet');

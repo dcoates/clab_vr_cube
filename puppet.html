@@ -134,7 +134,7 @@ function setupShader(wid) {
 	// Set the luminance (0-1.0) here:
 	// Gamma defaults to 2.4 (for Samsung S6)
     var defaults={'intensity1':1.0, 'intensity2':1.0,
-            'con1':1.0, 'con2':1.0, 'canvas_half':wid};
+            'con1':1.0, 'con2':1.0, 'canvas_half':wid, 'inv_gamma':1.0/2.4};
     setGlobals(defaults);
 }
 
@@ -192,8 +192,6 @@ function init() {
 	
 	texturedroom= new THREE.Mesh(texturedroomgeometry, texturedsf1);
 	scene.add( texturedroom );
-
-	//scene.add( new THREE.HemisphereLight( ) );
 
 	var light = new THREE.AmbientLight( 0xffffff,1);
 	light.position.set( 0, 0, 0 ).normalize();
