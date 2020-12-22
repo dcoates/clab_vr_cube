@@ -47,6 +47,7 @@ var room;
 var luminosityPass = null; // must be global so we can change parameters
 var baseLayer = null; 
 var renderTarget = null;
+var renderTarget_nonvr = null;
 var XRready= false;
 var cameraVR = null;
 
@@ -121,25 +122,12 @@ function setGlobals(params) {
     });
 }
 
-function setupShader(wid) {
-	if ( wid === undefined ) {
-        wid=100; //testing/debugging
-        }
-	luminosityPass = new ShaderPass( LumGammaShader );
-
-	// Set the luminance (0-1.0) here:
-	// Gamma defaults to 2.4 (for Samsung S6)
-    var defaults={'intensity1':1.0, 'intensity2':1.0,
-            'con1':1.0, 'con2':1.0, 'canvas_half':wid, 'inv_gamma':1.0/2.4};
-    setGlobals(defaults);
-}
-
 function setupXRshader() {
     console.log('Trying setupXR');
     baseLayer=document.rend.xr.getSession().renderState.baseLayer;
     renderTarget = new THREE.WebGLRenderTarget( baseLayer.framebufferWidth, baseLayer.framebufferHeight );
     renderTarget.texture.name = 'XRtemp.rt1';
-    setupShader(baseLayer.framebufferWidth/2.0);
+	setGlobals({'canvas_half':baseLayer.framebufferWidth/2.0});
     XRready=true;
 	console.log(baseLayer.framebufferWidth, baseLayer.framebufferHeight); 
 }
@@ -221,6 +209,20 @@ function init() {
     //scene.onBeforeRender=obf; // this will eventually be useful (to get cameras)
 	document.body.appendChild( VRButton.createButton( renderer ) );
 	renderer.setAnimationLoop( render, camera);
+
+	// Set up a render target for rendering before entering VR (which creates its own 2x wide RenderTarget)
+	// This permits running the luminance shader (and getting snapshot) prior to VR
+    renderTarget_nonvr = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight);
+    renderTarget_nonvr.texture.name = 'rt_nonvr';
+
+	// Create the global shader
+	luminosityPass = new ShaderPass( LumGammaShader );
+
+	// Shader defaults (they are written unto shader's uniorms)
+	// Gamma defaults to 2.4 (for Samsung S6)
+    var defaults={'intensity1':1.0, 'intensity2':1.0,
+            'con1':1.0, 'con2':1.0, 'canvas_half':window.innerWidth/2.0, 'inv_gamma':1.0/2.4};
+    setGlobals(defaults);
 }
 
 function erasecubes(){
@@ -251,11 +253,15 @@ function render() {
     } else {
         if  (false) { // This does non-VR with our post-proc shader (need to send renderTarget first though)
             luminosityPass.renderToScreen=false; // Render to texture
-            renderer.setRenderTarget( renderTarget );
+			renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight);
+			renderer.setScissor ( 0, 0, window.innerWidth, window.innerHeight);
+            renderer.setRenderTarget( renderTarget_nonvr );
 	        renderer.render( scene, camera );
 
             luminosityPass.renderToScreen=true; // Don't use a renderTarget; use the FB we set above
-            luminosityPass.render( renderer, null, renderTarget );
+			renderer.setViewport( 0, 0, window.innerWidth, window.innerHeight);
+			renderer.setScissor ( 0, 0, window.innerWidth, window.innerHeight);
+            luminosityPass.render( renderer, null, renderTarget_nonvr );
         } else { // non-VR, no post-proc shader:
 	        renderer.render( scene, camera );
         }
