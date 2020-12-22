@@ -46,15 +46,21 @@ hr.line {border: 1px;}
 	<button id="btn-send3.2Mcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=0.032;" style= "position:relative; left:40px;">3.2</button>
 	<br>
 	<hr class="line">
-	<label for="BKG"  style= "position:relative; left:8px;"> Background SFs: </label>
-	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';" style= "position:relative; left:16px;">1cpi</button>
-	<button id="btn-sendBKG-4cpi" onclick="background='BKG4';" style= "position:relative; left:16px;">4cpi</button>
-	<button id="btn-sendBKG-8cpi" onclick="background='BKG8';" style= "position:relative; left:16px;">8cpi</button>
+	<label for="BKG"  style= "position:relative; left:1px;"> Backgd (cpd)</label>
+	<button id="btn-sendBKG-0.3cpi" onclick="background='BKG03';" style= "position:relative; left:0px;">0.3</button>
+	<button id="btn-sendBKG-0.6cpi" onclick="background='BKG06';" style= "position:relative; left:0px;">0.6</button>
+	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';" style= "position:relative; left:0px;">1.0</button>
+	<button id="btn-sendBKG-2cpi" onclick="background='BKG2';" style= "position:relative; left:0px;">2.0</button>
+	<button id="btn-sendBKG-4cpi" onclick="background='BKG4';" style= "position:relative; left:0px;">4.0</button>
+	<button id="btn-sendBKG-8cpi" onclick="background='BKG8';" style= "position:relative; left:0px;">8.0</button>
 	<br>
-	<label for="TGT" style= "position:relative; left:20px;">Target SFs:</label>
-	<button id="btn-sendTGT-1cpi" onclick="targetsf='TGT1';" style= "position:relative; left:55px;">1cpi</button>
-	<button id="btn-sendTGT-4cpi" onclick="targetsf='TGT4';" style= "position:relative; left:55px;">4cpi</button>
-	<button id="btn-sendTGT-8cpi" onclick="targetsf='TGT8';" style= "position:relative; left:55px;">8cpi</button>
+	<label for="TGT" style= "position:relative; left:5px;">Target (cpd)</label>
+	<button id="btn-sendTGT-0.3cpi" onclick="targetSf='TGT03';" style= "position:relative; left:9px;">0.3</button>
+	<button id="btn-sendTGT-0.6cpi" onclick="targetSf='TGT06';" style= "position:relative; left:9px;">0.6</button>
+	<button id="btn-sendTGT-1cpi" onclick="targetSf='TGT1';" style= "position:relative; left:9px;">1.0</button>
+	<button id="btn-sendTGT-2cpi" onclick="targetSf='TGT2';" style= "position:relative; left:9px;">2.0</button>
+	<button id="btn-sendTGT-4cpi" onclick="targetSf='TGT4';" style= "position:relative; left:9px;">4.0</button>
+	<button id="btn-sendTGT-8cpi" onclick="targetSf='TGT8';" style= "position:relative; left:9px;">8.0</button>
 	<br>
 	<br>
 	<button id="btn-reset" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=1.0,
@@ -90,7 +96,7 @@ var graphs_color_state=[];
 var dict_condition={'intensity1':1.0,'intensity2':1.0,'con1':1.0,'con2':1.0};
 var dict_params = {}; // GLOBAL
 var background='BKG1';
-var targetsf='TGT1';
+var targetSf='TGT1';
 var subject;
 var leftlum=1;
 var rightlum=1;
@@ -115,6 +121,7 @@ var header=['value','which_target','resp','reversals','mean_revs','zpos_base','s
 function begin_staircase() {
     
     send1('texturedroom.material.map='+background+';texturedroom.material.needsUpdate=true;');
+    send1('object.material.map='+targetSf+';object.material.needsUpdate=true;');
     send1('setGlobals('+JSON.stringify(dict_condition)+');')
 
 	trial_num=0;
@@ -195,7 +202,7 @@ function do_trial() {
 	hot.setDataAtCell(trial_num+1,COL_WHICH_TARGET,which);
 	hot.setDataAtCell(trial_num+1,COL_ZPOS_BASE,zpos_base);
 	hot.setDataAtCell(trial_num+1,COL_BACKGROUND,background);
-	hot.setDataAtCell(trial_num+1,COL_TARGETSF,targetsf);
+	hot.setDataAtCell(trial_num+1,COL_TARGETSF,targetSf);
 	hot.setDataAtCell(trial_num+1,COL_SUBJECTID,subject);
 
 

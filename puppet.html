@@ -66,38 +66,34 @@ lost: function(s) {log.info(s);},
 
 //Create background,BKG
 var texturedroomgeometry = new THREE.BoxGeometry (10,10,10);
-var BKG1 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
-BKG1.wrapS = THREE.RepeatWrapping;
-BKG1.wrapT = THREE.RepeatWrapping;
-BKG1.repeat.set( 38,38);
-var BKG4 = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
-BKG4.wrapS = THREE.MirroredRepeatWrapping;
-BKG4.wrapT = THREE.MirroredRepeatWrapping;
-BKG4.repeat.set( 38,38);
-var BKG8 = THREE.ImageUtils.loadTexture( './sf_texture8.00.png' );
-BKG8.wrapS = THREE.MirroredRepeatWrapping;
-BKG8.wrapT = THREE.MirroredRepeatWrapping;
-BKG8.repeat.set( 38,38);
-var texturedsf1 = new THREE.MeshLambertMaterial( { map: BKG1, side: THREE.BackSide } );
+var BKG03 = THREE.ImageUtils.loadTexture( './sf_texture30.00.png' );
+//BKG1.wrapS = THREE.RepeatWrapping;
+//BKG1.wrapT = THREE.RepeatWrapping;
+//BKG1.repeat.set( 38,38);
+var BKG06 = THREE.ImageUtils.loadTexture( './sf_texture60.00.png' );
+var BKG1 = THREE.ImageUtils.loadTexture( './sf_texture90.00.png' );
+var BKG2 = THREE.ImageUtils.loadTexture( './sf_texture180.00.png' );
+var BKG4 = THREE.ImageUtils.loadTexture( './sf_texture360.00.png' );
+var BKG8 = THREE.ImageUtils.loadTexture( './sf_texture720.00.png' );
+
+var texturedsf1 = new THREE.MeshLambertMaterial( { map: BKG03, side: THREE.BackSide } );
 //var texturedsf4 = new THREE.MeshLambertMaterial( { map: sf4, side: THREE.BackSide } );
 //var texturedsf8 = new THREE.MeshLambertMaterial( { map: sf8, side: THREE.BackSide } );
 var texturedroom;
 
 //Create target, TGT
 var targetgeometry = new THREE.BoxBufferGeometry( 0.21,0.21,0.21); // 0.21 is equal ~3deg
-var TGT1 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
-TGT1.wrapS = THREE.RepeatWrapping;
-TGT1.wrapT = THREE.RepeatWrapping;
-TGT1.repeat.set( 1,1 );
-var TGT4 = THREE.ImageUtils.loadTexture( './sf_texture4.00.png' );
-TGT4.wrapS = THREE.RepeatWrapping;
-TGT4.wrapT = THREE.RepeatWrapping;
-TGT4.repeat.set( 1,1 );
-var TGT8 = THREE.ImageUtils.loadTexture( './sf_texture8.00.png' );
-TGT8.wrapS = THREE.RepeatWrapping;
-TGT8.wrapT = THREE.RepeatWrapping;
-TGT8.repeat.set( 1,1 );
-var targetSf = new THREE.MeshLambertMaterial( { map: TGT1 } );
+var TGT03 = THREE.ImageUtils.loadTexture( './sf_texture1.00.png' );
+//TGT1.wrapS = THREE.RepeatWrapping;
+//TGT1.wrapT = THREE.RepeatWrapping;
+//TGT1.repeat.set( 1,1 );
+var TGT06 = THREE.ImageUtils.loadTexture( './sf_texture2.00.png' );
+var TGT1 = THREE.ImageUtils.loadTexture( './sf_texture3.00.png' );
+var TGT2 = THREE.ImageUtils.loadTexture( './sf_texture6.00.png' );
+var TGT4 = THREE.ImageUtils.loadTexture( './sf_texture12.00.png' );
+var TGT8 = THREE.ImageUtils.loadTexture( './sf_texture24.00.png' );
+
+var targetSf = new THREE.MeshLambertMaterial( { map: TGT03 } );
 var object;
 
 /*
@@ -179,19 +175,19 @@ function init() {
 
 	camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 100 );//The FOV is reset as it enters the VR mode, I suspect 90deg based on my calculation
 
-	camera.position.set( 0, 0, 0);
+	camera.position.set( 0, 1.6, 0);
 	//camera.rotation.set(0, Math.PI/2.0, 0); //set in radian 90 degree
 	camera.updateProjectionMatrix();
 	scene.add( camera );
 
 	room = new THREE.LineSegments(
-			new BoxLineGeometry( 10,10,10, 1,1,1).translate( 0, 0, 0 ), // first size, second density?
+			new BoxLineGeometry( 10,10,10, 1,1,1).translate( 0, 1.57, 0 ), // first size, second density?
 			new THREE.LineBasicMaterial( { color: 0x000000 } )
 			);
 	scene.add( room );
 	
 	texturedroom= new THREE.Mesh(texturedroomgeometry, texturedsf1);
-	scene.add( texturedroom );
+	//scene.add( texturedroom );
 
 	var light = new THREE.AmbientLight( 0xffffff,1);
 	light.position.set( 0, 0, 0 ).normalize();
@@ -204,7 +200,7 @@ function init() {
         object = new THREE.Mesh( targetgeometry, targetSf, (1,1,1)); //new THREE.MeshLambertMaterial( { color: 0x808080 } )
 
 		object.position.x = (i/3.0-1/3); //Math.random() * 1 - 0.5;
-		object.position.y = 1.6; //Math.random() * 1;
+		object.position.y = 1.57; //Math.random() * 1;
 		object.position.z = 0; //Math.random() * 1 - 0.5;
 
 		object.scale.x = 1.0; 
