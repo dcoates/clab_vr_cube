@@ -23,10 +23,10 @@ hr.line {border: 1px;}
 	<button id="btn-sendXRshader" onclick="send1('setupXRshader()');" style="border-radius:10px; font-size:16px; background-color: tomato; color:white; position:relative;left:10px;">InitXR</button>
 	<br><br>
 	<label for="BinoLum" style= "position:relative; left:14px;">Bino Lum (%) :</label>
-	<button id="btn-send100Blum" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=1.0;" style= "position:relative; left:24px;">100</button>
+	<button id="btn-send100Blum" onclick="set_globals({'intensity1':1.0,'intensity2':1.0});" style= "position:relative; left:24px;">100</button>
 	<button id="btn-send32Blum" onclick="dict_condition['intensity1']=0.32,dict_condition['intensity2']=0.32;" style= "position:relative; left:24px;">32</button>
 	<button id="btn-send10Blum" onclick="dict_condition['intensity1']=0.1,dict_condition['intensity2']=0.1;" style= "position:relative; left:24px;">10</button>
-	<button id="btn-send3.2Blum" onclick="dict_condition['intensity1']=0.032,dict_condition['intensity2']=0.032;" style= "position:relative; left:24px;">3.2</button>
+	<button id="btn-send3.2Blum" onclick="set_globals({'intensity1':0.032,'intensity2':0.032});" style= "position:relative; left:24px;">3.2</button>
 	<br>
 	<label for="BinoContrast" style= "position:relative; left:4px;">Bino Contrast (%) :</label>
 	<button id="btn-send100Bcon" onclick="dict_condition['con1']=1.0,dict_condition['con2']=1.0;">100</button>
@@ -47,12 +47,12 @@ hr.line {border: 1px;}
 	<br>
 	<hr class="line">
 	<label for="BKG"  style= "position:relative; left:1px;"> Backgd (cpd)</label>
-	<button id="btn-sendBKG-0.3cpi" onclick="background='BKG03';" style= "position:relative; left:0px;">0.3</button>
-	<button id="btn-sendBKG-0.6cpi" onclick="background='BKG06';" style= "position:relative; left:0px;">0.6</button>
-	<button id="btn-sendBKG-1cpi" onclick="background='BKG1';" style= "position:relative; left:0px;">1.0</button>
-	<button id="btn-sendBKG-2cpi" onclick="background='BKG2';" style= "position:relative; left:0px;">2.0</button>
-	<button id="btn-sendBKG-4cpi" onclick="background='BKG4';" style= "position:relative; left:0px;">4.0</button>
-	<button id="btn-sendBKG-8cpi" onclick="background='BKG8';" style= "position:relative; left:0px;">8.0</button>
+	<button id="btn-sendBKG-0.3cpi" onclick="set_bg_sf('BKG03');" style= "position:relative; left:0px;">0.3</button>
+	<button id="btn-sendBKG-0.6cpi" onclick="backgroundSf='BKG06';" style= "position:relative; left:0px;">0.6</button>
+	<button id="btn-sendBKG-1cpi" onclick="backgroundSf='BKG1';" style= "position:relative; left:0px;">1.0</button>
+	<button id="btn-sendBKG-2cpi" onclick="backgroundSf='BKG2';" style= "position:relative; left:0px;">2.0</button>
+	<button id="btn-sendBKG-4cpi" onclick="backgroundSf='BKG4';" style= "position:relative; left:0px;">4.0</button>
+	<button id="btn-sendBKG-8cpi" onclick="backgroundSf='BKG8';" style= "position:relative; left:0px;">8.0</button>
 	<br>
 	<label for="TGT" style= "position:relative; left:5px;">Target (cpd)</label>
 	<button id="btn-sendTGT-0.3cpi" onclick="targetSf='TGT03';" style= "position:relative; left:9px;">0.3</button>
@@ -95,7 +95,7 @@ var graphs=[];
 var graphs_color_state=[];
 var dict_condition={'intensity1':1.0,'intensity2':1.0,'con1':1.0,'con2':1.0};
 var dict_params = {}; // GLOBAL
-var background='BKG1';
+var backgroundSf='BKG1';
 var targetSf='TGT1';
 var subject;
 var leftlum=1;
@@ -118,11 +118,28 @@ function load_code() {
 
 var header=['value','which_target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3','Background','TargetSF',"SubjectID","LeftLum","RightLum","LeftContrast","RightContrast"];
 
-function begin_staircase() {
-    
-    send1('texturedroom.material.map='+background+';texturedroom.material.needsUpdate=true;');
+// These helper functions set local param copies and also send them across
+function set_globals(dict_new) {
+	// For dict passed in as parameter, copy items into our local global dictionary
+    Object.keys(dict_new).map(function(key,index) {
+        dict_condition[key]=dict_new[key];
+    });
+    send1('setGlobals('+JSON.stringify(dict_condition)+');') // send it across to puppet !
+}
+function set_bg_sf(bg) {
+    backgroundSf=bg;
+    send1('texturedroom.material.map='+backgroundSf+';texturedroom.material.needsUpdate=true;');
+}
+function set_target_sf(target) {
+    targetSf=target;
     send1('object.material.map='+targetSf+';object.material.needsUpdate=true;');
-    send1('setGlobals('+JSON.stringify(dict_condition)+');')
+}
+
+function begin_staircase() {
+	// These re-send the globals. Might be redundant
+	set_bg_sf(backgroundSf);
+	set_target_sf(targetSf);
+	set_globals({});
 
 	trial_num=0;
 
@@ -180,7 +197,6 @@ var COL_RightLum=13;
 var COL_LeftContrast=14;
 var COL_RightContrast=15;
 
-
 function do_trial() {
 	var trial_next=theStaircase.get_trial();
 	var which=trial_next['which'];
@@ -201,18 +217,17 @@ function do_trial() {
 	hot.setDataAtCell(trial_num+1,COL_THRESH,val);
 	hot.setDataAtCell(trial_num+1,COL_WHICH_TARGET,which);
 	hot.setDataAtCell(trial_num+1,COL_ZPOS_BASE,zpos_base);
-	hot.setDataAtCell(trial_num+1,COL_BACKGROUND,background);
+	hot.setDataAtCell(trial_num+1,COL_BACKGROUND,backgroundSf);
 	hot.setDataAtCell(trial_num+1,COL_TARGETSF,targetSf);
 	hot.setDataAtCell(trial_num+1,COL_SUBJECTID,subject);
 
-
-	var s=""; // The update string to send
+	var s=""; // The update string to send. Build dynamically.
 
 	// For all items
 	for ( var i = 0; i < num_items; i ++ ) {
 		var jitter=0;//Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
 		var jittered_scale=scale_base+jitter;
-		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time // TODO: this was 10. Seemed weird.
+		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time
 		var zpos=zpos_base;
 		if (i==which) { 
 			zpos += val;	// target: change disparity
@@ -228,11 +243,14 @@ function do_trial() {
 		s += cube+'.scale.y='+jittered_scale+';';
 		s += cube+'.rotation.z='+rot+';';
 		s += cube+'.position.z='+zpos+';';
-		s += cube+'.position.z='+zpos+';';
+		//s += cube+'.position.z='+zpos+';'; // TODO: don't understand why there were two copies of this
 		s += cube+'.position.y=1.6;'; // restore to visible
 	};
 
-	s += "setTimeout(erasecubes,"+get_value('timeout')+');'; // set erase time-out
+	var timeo=get_value('timeout');
+	if (timeo>0) { // If positive, set erase time-out (else no erase)
+		s += "setTimeout(erasecubes,"+timeo+");"; 
+	};
 
 	console.log(s);
 	thePeer.send("C "+s);
@@ -397,19 +415,6 @@ var big_im="";
 function receive_message(s) {
 
 	the_mess=s;
-	//console.log("GOT ONE");
-
-	// This was for the Dark Adaptation objects (staircases). We (summation) should just have a string
-	if (typeof(s)=="object") { // upload
-		sender=s.shift()
-			xvals=s.map(el=>el.x);
-		yvals=s.map(el=>el.y);
-		hot.populateFromArray(row,1,[xvals,yvals]);
-		//hot.populateFromArray(row+1,1,[yvals]);
-		hot.populateFromArray(row,0,[[sender[5]]]);
-
-		row=row+2;
-	}
 
 	if (typeof(s)=="string") { // single datapt message
 		//sender_id=sender;
@@ -441,32 +446,10 @@ function receive_message(s) {
 					big_im=""; // clear for next one
 				}
 			} else {
-			    var col=fields[1].toUpperCase();
-				var colnum=col.charCodeAt(0)-65;
-				var row=parseInt(col.substr(1))-1;
-				var dat=fields[2];
-
-				//console.log(col);
-				//console.log(colnum);
-				//console.log(row);
-				//console.log(dat);
-				if (dat.includes("START")) {
-					var prev=hot.getDataAtCell(row,colnum);
-					if (prev.length>0) {
-						set_html('lblMessage','OVERWRITE! '+groupid+' '+fields[1]);
-					} else {
-						hot.populateFromArray(row,colnum,[[dat]]);
-					}
-				} else {
-					hot.populateFromArray(row,colnum,[[dat]]);
-				}
+				// Don't understand message here
 			}// is an img or result msg
 		} 
 	}
-}
-
-function multi_clear(which) {
-	graphs[which].graph_clear_dots();
 }
 
 </script>
