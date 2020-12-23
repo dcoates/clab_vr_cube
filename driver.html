@@ -66,6 +66,7 @@ hr.line {border: 1px;}
 	<button id="btn-reset" onclick="dict_condition['intensity1']=1.0,dict_condition['intensity2']=1.0,
 	        dict_condition['con1']=1.0,dict_condition['con2']=1.0;" style="border-radius:4px; background-color: #D4A437; color:white;">RESET</button>
 	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
+	<button id="btn-send-from" onclick="trial_from_spreadsheet();" style="border-radius:4px;">Trial from Sheet</button>
 	
 	<textarea  name="commands" id="commands" style="width:100%;height:6%;">Enter Commands</textarea>
 	
@@ -114,6 +115,8 @@ function load_code() {
 
 	// Set up our key handler
 	document.onkeydown = handle_key;
+
+	document.hot = hot; // For debugging, expose the spreadsheet to the console
 };
 
 var header=['value','which_target','resp','reversals','mean_revs','zpos_base','scale1','scale2','scale3','Background','TargetSF',"SubjectID","LeftLum","RightLum","LeftContrast","RightContrast"];
@@ -174,13 +177,14 @@ function debug_msg(s) {
 
 var trial_num=0; // TODO: staircase has its own version
 
-// Variables for each trial
+// Variables for each trial. TODO: Some of these needn't be globals
 var scale_base=1.0;
 var zpos_base=-4;
 //var zpos_base_jitter=0.01; // jitter the baseline disparity. 0 for always at a single baseline
 var which_is_target=-1; //which one was the target on the "current" trial
 var num_items=3;
 
+// What columns of the spreadsheet correspond to:
 var COL_THRESH=0;
 var COL_WHICH_TARGET=1;
 var COL_RESP=2;
@@ -188,7 +192,7 @@ var COL_REV=3;
 var COL_MEAN=4;
 var COL_ZPOS_BASE=5;
 var COL_SCALES=6; 
-// Column 6,7,8 are for scale
+// Column 6,7,8 are for scale1,scale2,scale3 resp.
 var COL_BACKGROUND=9;
 var COL_TARGETSF=10;
 var COL_SUBJECTID=11;
@@ -197,7 +201,45 @@ var COL_RightLum=13;
 var COL_LeftContrast=14;
 var COL_RightContrast=15;
 
+function build_trial_parameters(val,which,zpos_base,timeo) {
+	var s=""; // The update string to send. Build dynamically.
+
+	// For all (3) items
+	for ( var i = 0; i < num_items; i ++ ) {
+		//var jitter=0;//Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
+
+		// Scale is not randomly jittered anymore. Instead, only the target, which is crossed (closer to the 
+		// viewer) is made smaller so that all 3 items are the same size.
+		var jittered_scale=scale_base;
+		var rot=Math.floor(Math.random()*4)*Math.PI/2.0; //Rotate the texture each time
+		var zpos=zpos_base;
+		if (i==which) { 
+			zpos += val;	// target: change disparity
+			jittered_scale=-scale_base*zpos/4;
+		};	
+
+		// Update our spreadsheet 
+		hot.setDataAtCell(trial_num+1,COL_SCALES+i,jittered_scale);
+
+		// Build the command string to send to the phone
+		var cube ='room.children['+i+']';
+		s += cube+'.scale.x='+jittered_scale+';';
+		s += cube+'.scale.y='+jittered_scale+';';
+		s += cube+'.rotation.z='+rot+';';
+		s += cube+'.position.z='+zpos+';';
+		//s += cube+'.position.z='+zpos+';'; // TODO: don't understand why there were two copies of this
+		s += cube+'.position.y=1.6;'; // restore to visible
+	};
+
+	if (timeo>0) { // If positive, set erase time-out (else no erase)
+		s += "setTimeout(erasecubes,"+timeo+");"; 
+	};
+
+	return s;
+}
+
 function do_trial() {
+	// Called "automatically" from inside the staircase handler
 	var trial_next=theStaircase.get_trial();
 	var which=trial_next['which'];
 	var val=trial_next['value'];
@@ -221,40 +263,40 @@ function do_trial() {
 	hot.setDataAtCell(trial_num+1,COL_TARGETSF,targetSf);
 	hot.setDataAtCell(trial_num+1,COL_SUBJECTID,subject);
 
-	var s=""; // The update string to send. Build dynamically.
-
-	// For all items
-	for ( var i = 0; i < num_items; i ++ ) {
-		var jitter=0;//Math.random()*0.1//-0.05; // choose random between -0.1 and +0.1 
-		var jittered_scale=scale_base+jitter;
-		var rot=Math.floor(Math.random()*4)*Math.PI/2; //Rotate the texture each time
-		var zpos=zpos_base;
-		if (i==which) { 
-			zpos += val;	// target: change disparity
-            jittered_scale=-scale_base*zpos/4;
-		};	
-
-		// Update our spreadsheet 
-		hot.setDataAtCell(trial_num+1,COL_SCALES+i,jittered_scale);
-
-		// Build the command string to send to the phone
-		var cube ='room.children['+i+']';
-		s += cube+'.scale.x='+jittered_scale+';';
-		s += cube+'.scale.y='+jittered_scale+';';
-		s += cube+'.rotation.z='+rot+';';
-		s += cube+'.position.z='+zpos+';';
-		//s += cube+'.position.z='+zpos+';'; // TODO: don't understand why there were two copies of this
-		s += cube+'.position.y=1.6;'; // restore to visible
-	};
-
 	var timeo=get_value('timeout');
-	if (timeo>0) { // If positive, set erase time-out (else no erase)
-		s += "setTimeout(erasecubes,"+timeo+");"; 
-	};
-
-	console.log(s);
+	var s=build_trial_parameters(val,which,zpos_base,timeo);
 	thePeer.send("C "+s);
+
+	console.log(s); // debugging
 };
+
+function trial_from_spreadsheet() {
+	// When examiner clicks button, re-send values from last row of staircase
+	// (but infinite timeout) : TODO: could be timeout from UI
+	var row_selected;
+	var val;
+	var which;
+	var zpos_base;
+
+	// These might be unnecessary when those changes are immediate
+	set_bg_sf(backgroundSf);
+	set_target_sf(targetSf);
+	set_globals({});
+
+	row_selected=trial_num+1;
+	val=parseFloat(hot.getDataAtCell(row_selected,COL_THRESH) );
+	which=parseFloat(hot.getDataAtCell(row_selected,COL_WHICH_TARGET) );
+	zpos_base=parseFloat(hot.getDataAtCell(row_selected,COL_ZPOS_BASE) );
+
+	// TODO: Could set target/backgroundSF and lum/contrast settings from the spreadsheet
+	// (instead of requiring user to click those buttons)
+
+	// Send stimulus parameters from the currently selected row of the spreadsheet. 
+	// Infinite duration (time=-1)
+	var s=build_trial_parameters(val,which,zpos_base,-1.0);
+	thePeer.send("C "+s);
+	//console.log(s); // debugging
+}
 
 function handle_key(e) {
 	var resp;
