@@ -67,6 +67,8 @@ hr.line {border: 1px;}
 	        dict_condition['con1']=1.0,dict_condition['con2']=1.0;" style="border-radius:4px; background-color: #D4A437; color:white;">RESET</button>
 	<button id="btn-send" onclick="send_command();" style="border-radius:4px;">Send</button>
 	<button id="btn-send-from" onclick="trial_from_spreadsheet();" style="border-radius:4px;">Trial from Sheet</button>
+	<button id="btn-get-im0" onclick="thePeer.send('0');" style="border-radius:4px;">Image 0</button>
+	<button id="btn-get-im1" onclick="thePeer.send('1');" style="border-radius:4px;">Image 1</button>
 	
 	<textarea  name="commands" id="commands" style="width:100%;height:6%;">Enter Commands</textarea>
 	

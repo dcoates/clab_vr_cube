@@ -108,11 +108,40 @@ new THREE.TextureLoader().load(
     this.earthMesh.material.needsUpdate = true;
   },
 */
+        
+function send_chunks(long_str,imnum) {
+	var idx_byte=0;
+	var idx_chunk=0;
+	const MY_MAX=65536-256;
+	var num_chunks=Math.ceil(long_str.length/MY_MAX);
+	for (idx_chunk=0; idx_chunk<num_chunks; idx_chunk++) {
+		var subbie=long_str.substr(idx_byte,MY_MAX);
+		thePeer.send(imnum+" "+idx_chunk+"/"+num_chunks+" "+subbie);
+		idx_byte+=MY_MAX;
+	}
+}
+
+// For image transmission:
+var imData0=null;
 
 function receive_commands(s) {
 	console.log(s);
 	if (s[0]=="C") { // js commands to execute
 		eval(s.substr(2));
+	}
+
+
+	if (s[0]=="0") { // get Img 0
+		document.r2.render(scene,renderer.xr.cameras[0]) // Left camera
+		var imData0=document.r2.domElement.toDataURL()
+		send_chunks(imData0,'i0');
+		document.imData0=imData0; 
+	}
+	if (s[0]=="1") { // get Img 1
+		document.r2.render(scene,renderer.xr.cameras[1]) // Right camera
+		var imData0=document.r2.domElement.toDataURL()
+		send_chunks(imData0,'i1');
+		document.imData0=imData0; 
 	}
 }
 
@@ -125,7 +154,7 @@ function setGlobals(params) {
 function setupXRshader() {
     console.log('Trying setupXR');
     baseLayer=document.rend.xr.getSession().renderState.baseLayer;
-    renderTarget = new THREE.WebGLRenderTarget( baseLayer.framebufferWidth, baseLayer.framebufferHeight );
+    renderTarget = new THREE.WebGLRenderTarget( baseLayer.framebufferWidth, baseLayer.framebufferHeight, {'depthBuffer':false} );
     renderTarget.texture.name = 'XRtemp.rt1';
 	setGlobals({'canvas_half':baseLayer.framebufferWidth/2.0});
     XRready=true;
@@ -217,6 +246,17 @@ function init() {
 
 	// Create the global shader
 	luminosityPass = new ShaderPass( LumGammaShader );
+                
+	// Create a new WebGLRenderer (just for rendering of the two VR cameras to imgs)
+	// Try to be as close as possible to the original renderer
+	const renderer2 = new THREE.WebGLRenderer( { antialias: true } );
+	renderer2.setPixelRatio( window.devicePixelRatio );
+	renderer2.setSize( window.innerWidth, window.innerHeight );
+	renderer2.outputEncoding = THREE.sRGBEncoding;
+	container.appendChild( renderer2.domElement );
+	document.rend=renderer; // 
+	document.r2=renderer2;
+	document.scene=scene;
 
 	// Shader defaults (they are written unto shader's uniorms)
 	// Gamma defaults to 2.4 (for Samsung S6)
@@ -232,13 +272,11 @@ function erasecubes(){
 }
 
 function render() {
-
     if (XRready) {
-
         renderer.setRenderTarget( renderTarget );
 		renderer.setViewport( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
 		renderer.setScissor ( 0, 0, baseLayer.framebufferWidth, baseLayer.framebufferHeight );
-        renderer.xr.enabled=true; // to prevent it from overriding camera
+        renderer.xr.enabled=true; // Render VR-style
 	    renderer.render( scene, camera );
 
         // Set the copy target to the actual real layer than WebXR uses
