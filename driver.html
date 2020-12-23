@@ -278,18 +278,18 @@ function trial_from_spreadsheet() {
 	var which;
 	var zpos_base;
 
-	// These might be unnecessary when those changes are immediate
-	set_bg_sf(backgroundSf);
-	set_target_sf(targetSf);
 	set_globals({});
 
 	row_selected=trial_num+1;
 	val=parseFloat(hot.getDataAtCell(row_selected,COL_THRESH) );
 	which=parseFloat(hot.getDataAtCell(row_selected,COL_WHICH_TARGET) );
 	zpos_base=parseFloat(hot.getDataAtCell(row_selected,COL_ZPOS_BASE) );
+	var back_sf=hot.getDataAtCell(row_selected,COL_BACKGROUND);
+	var target_sf=hot.getDataAtCell(row_selected,COL_TARGETSF);
 
-	// TODO: Could set target/backgroundSF and lum/contrast settings from the spreadsheet
-	// (instead of requiring user to click those buttons)
+	// TODO: lum & contrast settings from the spreadsheet
+	set_bg_sf(back_sf);
+	set_target_sf(target_sf);
 
 	// Send stimulus parameters from the currently selected row of the spreadsheet. 
 	// Infinite duration (time=-1)
